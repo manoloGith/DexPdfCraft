@@ -17,7 +17,7 @@ se reescribe la interfaz: se compila para Android la propia interfaz egui de Pdf
 
 ```
 DexPdfCraft/
-├── upstream/                  submódulo: storytold/pdfcraft, fijado a un commit, sin cambios
+├── upstream/                  submódulo: fork manoloGith/pdfcraft, rama dexpdfcraft/android
 ├── apps/dexpdfcraft/          el crate Rust de la app (cdylib que carga Android)
 │   ├── src/lib.rs             android_main → eframe (wgpu, con glow de reserva)
 │   ├── src/pdfcraft.rs        arranca la interfaz de PdfCraft (PdfCraftApp)
@@ -25,13 +25,13 @@ DexPdfCraft/
 │   ├── src/doc.rs             abrir y renderizar con pdfcraft-render
 │   ├── src/main.rs            la misma ventana en escritorio, para iterar sin dispositivo
 │   └── android/               proyecto Gradle: GameActivity + manifiesto para DeX
-├── patches/upstream/          commits del fork de PdfCraft (hasta que esté en GitHub)
-├── scripts/                   sync-upstream, apply/export-fork-patches
+├── scripts/                   sync-upstream (rebasa el fork), fetch-build-inputs (traducciones)
 └── docs/                      plan por fases y notas de cada fase
 ```
 
-- **Motor**: los 31 crates de PdfCraft (`upstream/crates/*`) se usan como dependencias por ruta; no
-  hay copia ni fork del motor, así que actualizar es mover el submódulo.
+- **Motor e interfaz**: los crates de PdfCraft (`upstream/crates/*`) se usan como dependencias por
+  ruta, desde un fork que solo añade unos pocos commits para Android ([docs/fork.md](docs/fork.md)).
+  Actualizar es rebasar esa rama sobre upstream (`scripts/sync-upstream.sh`).
 - **Interfaz**: egui 0.37 y winit (los forks fijados de storytold) con el soporte de Android de
   `android-activity` (GameActivity). wgpu dibuja con Vulkan o GLES; si no arranca, glow (OpenGL ES).
 - **Kotlin**: solo una `MainActivity` mínima. En la fase 3 se encargará de lo que solo Android ofrece
@@ -52,10 +52,10 @@ Primero clona con el submódulo:
 git clone --recursive https://github.com/manoloGith/DexPdfCraft
 ```
 
-Después, los cambios del fork de PdfCraft sobre el submódulo ([docs/fork.md](docs/fork.md)):
+Las traducciones de la interfaz son una entrada de compilación opcional (sin ellas, solo inglés):
 
 ```bash
-cd DexPdfCraft && scripts/apply-fork-patches.sh
+cd DexPdfCraft && eval "$(scripts/fetch-build-inputs.sh)"
 ```
 
 Después, el APK de depuración (arm64-v8a para el dispositivo, x86_64 para el emulador):

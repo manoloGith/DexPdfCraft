@@ -2,7 +2,9 @@
 
 DexPdfCraft usa, sin modificarlos, el motor y la interfaz de **PdfCraft**
 (<https://github.com/storytold/pdfcraft>, © 2026 ArtCraft Team and the PdfCraft contributors), con licencia **MIT o Apache-2.0**,
-incluidos como submódulo en `upstream/`. Los avisos y licencias de terceros de PdfCraft están en
+incluidos como submódulo en `upstream/` desde el fork
+[manoloGith/pdfcraft](https://github.com/manoloGith/pdfcraft) (rama `dexpdfcraft/android`, ver
+`docs/fork.md`). Los avisos y licencias de terceros de PdfCraft están en
 `upstream/NOTICE`, `upstream/ATTRIBUTION.md` y `upstream/licenses/`, y se aplican también aquí.
 
 El proceso de compilación con Gradle y cargo-ndk se basa en el de

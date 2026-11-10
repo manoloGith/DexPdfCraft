@@ -1,42 +1,46 @@
 # El fork de PdfCraft
 
-DexPdfCraft necesita unos pocos cambios en PdfCraft para que su interfaz compile y se distribuya en
-Android. Viven en la rama **`dexpdfcraft/android`** de un fork de `storytold/pdfcraft`:
+`upstream/` es un submódulo de **[manoloGith/pdfcraft](https://github.com/manoloGith/pdfcraft)**, un
+fork de `storytold/pdfcraft`, en la rama **`dexpdfcraft/android`**. La rama es el `main` de upstream
+más unos pocos commits que DexPdfCraft necesita para que la interfaz compile y se distribuya en
+Android:
 
-| Cambio | Por qué |
+| Commit | Por qué |
 |---|---|
-| `android/rfd-shim`, `android/arboard-shim` y `crates/ui-egui/Cargo.toml` | `rfd` (diálogos) y `arboard` (portapapeles) no tienen backend Android. Los shims toman sus nombres: en los demás sistemas reexportan las crates reales, así que allí no cambia nada; en Android los responde un backend que instala la app (SAF y `ClipboardManager`, fase 3). |
-| `crates/ui-egui/src/widgets.rs` | Los logotipos de ArtCraft son marcas que las versiones modificadas deben quitar (`docs/brand/LICENSE-brand.txt`). El fork no incrusta ninguno. |
+| Shims de `rfd` y `arboard` (`android/`, `crates/ui-egui/Cargo.toml`) | `rfd` (diálogos) y `arboard` (portapapeles) no tienen backend Android. Los shims toman sus nombres: en los demás sistemas reexportan las crates reales, así que allí no cambia nada; en Android los responde un backend que instala la app (SAF y `ClipboardManager`, fase 3). |
+| Sin logotipos de ArtCraft (`crates/ui-egui/src/widgets.rs`) | Son marcas que las versiones modificadas deben quitar (`docs/brand/LICENSE-brand.txt`). |
+| Fuentes de `/system/fonts` (`platform/system_fonts.rs`) | Android guarda ahí sus fuentes y no tiene fontconfig. |
 
-## Mientras el fork no está en GitHub
+## Trabajar en el fork
 
-Esta sesión no puede crear repositorios en tu cuenta, así que los commits del fork se guardan como
-parches en `patches/upstream/`. El submódulo sigue apuntando al commit de upstream y
-`scripts/apply-fork-patches.sh` crea encima la rama `dexpdfcraft/android`. El CI lo ejecuta antes de
-compilar, y en un clon nuevo también hay que hacerlo:
+En `upstream/`, `origin` es el fork y `storytold` es el proyecto original:
 
 ```bash
-git clone --recursive https://github.com/manoloGith/DexPdfCraft
+git -C upstream checkout dexpdfcraft/android
+```
+
+Después de hacer commit en `upstream/`, sube la rama y registra aquí el nuevo commit del submódulo:
+
+```bash
+git -C upstream push origin dexpdfcraft/android
 ```
 
 ```bash
-cd DexPdfCraft && scripts/apply-fork-patches.sh
+git add upstream && git commit -m "upstream: …"
 ```
 
-Para trabajar en el fork: haz commit en `upstream/` sobre la rama `dexpdfcraft/android` y después
-ejecuta `scripts/export-fork-patches.sh`, que regenera `patches/upstream/`.
+Un clon nuevo solo necesita `git clone --recursive` (o `git submodule update --init`).
 
-`.gitmodules` lleva `ignore = all` para que el submódulo con los parches aplicados no aparezca como
-modificado. Se quitará cuando el submódulo apunte al fork.
+## Actualizar a una versión nueva de PdfCraft
 
-## Pasar al fork en GitHub (una vez)
+```bash
+scripts/sync-upstream.sh
+```
 
-1. En GitHub, pulsa **Fork** en <https://github.com/storytold/pdfcraft> y crea `manoloGith/pdfcraft`.
-2. Añade ese repositorio a las sesiones de Claude Code y pídeme que haga el cambio. Haré esto:
-   - subiré la rama `dexpdfcraft/android` al fork;
-   - cambiaré la URL del submódulo y lo fijaré a esa rama;
-   - quitaré `ignore = all`, `patches/` y el paso del CI.
+El script rebasa `dexpdfcraft/android` sobre el `main` de storytold, comprueba que los
+`[patch.crates-io]` de este workspace siguen coincidiendo con los de upstream y vuelve a tomar su
+`Cargo.lock`. Luego hay que compilar y probar, subir la rama con `--force-with-lease` y hacer commit
+del submódulo.
 
-Para actualizar a una versión nueva de PdfCraft hay que rebasar `dexpdfcraft/android` sobre el
-`main` de upstream; `scripts/sync-upstream.sh` comprueba después que los `[patch]` de Cargo siguen
-coincidiendo.
+Los cambios que puedan servir a todos, como los shims, se pueden proponer a storytold más adelante
+como pull request.

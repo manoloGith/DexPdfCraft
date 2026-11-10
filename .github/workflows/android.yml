@@ -16,9 +16,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: PdfCraft fork patches (patches/upstream, until the fork is on GitHub)
-        run: scripts/apply-fork-patches.sh
-
       - name: Interface translations (craft-i18n at upstream's pinned revision)
         run: |
           scripts/fetch-build-inputs.sh | sed 's/^export //; s/"//g' >> "$GITHUB_ENV"

@@ -23,5 +23,6 @@ submódulo.
 2. **Forks de egui/winit de storytold**: conservan el soporte de Android de winit
    (`android-native-activity`); si un parche lo rompe, habrá que mantener un parche propio aquí.
 3. **Drivers GPU** (Mali, Adreno) con wgpu: mitigado con glow.
-4. **Seguir a upstream**: cambia a diario. `scripts/sync-upstream.sh` mueve el submódulo, comprueba
-   que los `[patch.crates-io]` siguen iguales y resiembra `Cargo.lock` desde el de upstream.
+4. **Seguir a upstream**: cambia a diario. `scripts/sync-upstream.sh` rebasa la rama del fork
+   sobre el `main` de upstream, comprueba que los `[patch.crates-io]` siguen iguales y vuelve a tomar
+   su `Cargo.lock` ([fork.md](fork.md)).
