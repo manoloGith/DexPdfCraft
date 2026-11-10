@@ -14,7 +14,7 @@ submódulo.
 | 4 | DeX y escritorio ([phase-4.md](phase-4.md)): cursores del sistema, título de la tarea, arrastrar y soltar PDFs, detección de DeX | ✅ código · ⬜ probar en DeX |
 | 5 | Funciones del escritorio que necesitan a Android ([phase-5.md](phase-5.md)): imprimir con el servicio de impresión de Android, modelos de OCR en el APK, enlaces con `Intent` | ✅ código · ⬜ probar en DeX · compartir y voz: no existen en PdfCraft de escritorio |
 | 6 | Móvil y tablet sin DeX ([phase-6.md](phase-6.md)): teclado en pantalla (GameTextInput → texto y pre-edición), barras del sistema, notch y teclado como zona segura | ✅ código · ⬜ probar en el móvil |
-| 7 | Rendimiento y memoria en ARM, autoguardado ante cierre en segundo plano, firma del APK, F-Droid | ⬜ |
+| 7 | Tamaño, firma y distribución ([phase-7.md](phase-7.md)): perfil de release mixto (−5 MB), clave de release, releases en GitHub, metadatos para F-Droid y Obtainium | ✅ · ⬜ enviar a F-Droid |
 
 ## Riesgos conocidos
 
