@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- wgpu draws with Vulkan or OpenGL ES 3; glow (the fallback) needs OpenGL ES 3 too. -->
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <!-- A mouse and a keyboard are what DeX is for, but the app also starts without them. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.type.pc" android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:hasCode="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:resizeableActivity="true">
+
+        <!-- Samsung DeX: keep the process when the window moves between the phone and the monitor
+             or the density changes (otherwise DeX restarts the app and the document is lost). -->
+        <meta-data android:name="com.samsung.android.keepalive.density" android:value="true" />
+        <meta-data android:name="com.samsung.android.multidisplay.keep_process_alive" android:value="true" />
+
+        <!-- NativeActivity subclass: winit receives every resize, density, keyboard and theme
+             change as an event, so none of them may recreate the activity. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboard|keyboardHidden|navigation|uiMode|fontScale|locale|layoutDirection|colorMode|touchscreen|mcc|mnc|fontWeightAdjustment">
+
+            <meta-data android:name="android.app.lib_name" android:value="dexpdfcraft" />
+
+            <!-- A desktop-sized window when DeX or desktop windowing opens it in a freeform window. -->
+            <layout
+                android:defaultWidth="1280dp"
+                android:defaultHeight="800dp"
+                android:gravity="center"
+                android:minWidth="720dp"
+                android:minHeight="480dp" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

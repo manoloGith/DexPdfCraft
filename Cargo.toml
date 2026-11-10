@@ -1,0 +1,67 @@
+# DexPdfCraft: PdfCraft's desktop interface on Android, for Samsung DeX and Android desktop windowing.
+#
+# The PdfCraft engine and its egui interface come unmodified from `upstream/` (a git submodule of
+# storytold/pdfcraft, pinned to one commit). This workspace only adds the Android frontend.
+#
+# Path dependencies into `upstream/` resolve their `workspace = true` keys against upstream's own
+# workspace, but `[patch]` only applies from the root of the build, so the patches below mirror
+# upstream's `Cargo.toml` (keep them in step when the submodule moves: `scripts/sync-upstream.sh`).
+[workspace]
+resolver = "3"
+members = ["apps/dexpdfcraft"]
+exclude = ["upstream"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.95"
+repository = "https://github.com/manoloGith/DexPdfCraft"
+
+[workspace.lints.rust]
+# `android_main` must be `#[unsafe(no_mangle)]`; everything else stays free of unsafe code.
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
+[profile.dev.package."*"]
+opt-level = 2
+debug = false
+
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+# --- mirrored from upstream/Cargo.toml (`[patch.crates-io]`) ---
+[patch.crates-io]
+hayro-interpret = { path = "upstream/vendor/hayro-interpret" }
+hayro = { path = "upstream/vendor/hayro" }
+hayro-syntax = { path = "upstream/vendor/hayro-syntax" }
+hayro-cmap = { path = "upstream/vendor/hayro-cmap" }
+hayro-postscript = { path = "upstream/vendor/hayro-postscript" }
+hayro-jbig2 = { path = "upstream/vendor/hayro-jbig2" }
+lopdf = { path = "upstream/vendor/lopdf" }
+vello_common = { path = "upstream/vendor/vello_common" }
+vello_cpu = { path = "upstream/vendor/vello_cpu" }
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-winit = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_glow = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }

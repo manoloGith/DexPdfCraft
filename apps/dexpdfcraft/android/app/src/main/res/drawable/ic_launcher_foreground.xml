@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A placeholder icon of DexPdfCraft's own (a page on a monitor); PdfCraft's and ArtCraft's marks
+     are not used: see NOTICE.md. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="3"
+        android:pathData="M30,36h48v30h-48z M46,74h16 M54,66v8" />
+    <path android:fillColor="#FFFFFF" android:pathData="M45,40h14l6,6v16h-20z" />
+    <path android:fillColor="#E4572E" android:pathData="M48,52h14v3h-14z M48,57h10v3h-10z" />
+</vector>

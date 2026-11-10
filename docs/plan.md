@@ -1,0 +1,27 @@
+# Plan por fases
+
+Enfoque: **compilar para Android la interfaz egui de escritorio de PdfCraft** (`pdfcraft-ui-egui`,
+~105.000 líneas) en lugar de reescribirla, y añadir solo la capa de plataforma Android. Así se
+conserva la disposición del escritorio y todas las funciones, y se sigue a upstream moviendo un
+submódulo.
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| 0 | Repositorio: submódulo `upstream/`, workspace Cargo con los `[patch]` de upstream, Gradle + cargo-ndk, CI, licencias y marcas | ✅ |
+| 1 | Prueba técnica: eframe/winit en Android (NativeActivity), wgpu con glow de reserva, motor y renderizador de PdfCraft en ARM64, entrada de DeX | ✅ código · ⬜ probar en DeX ([phase-1.md](phase-1.md)) |
+| 2 | `pdfcraft-ui-egui` en Android: `cfg(target_os = "android")` para `rfd`, `arboard`, `craft-update`, fontconfig, canal de control e instancia única; `platform/android` (fuentes de `/system/fonts`, rutas de datos, idioma) | ⬜ |
+| 3 | Puente Kotlin ↔ Rust (JNI en un crate aislado): SAF abrir/guardar/guardar como, intents VIEW/SEND, compartir, `PrintManager`, lectura en voz alta, arrastrar y soltar | ⬜ |
+| 4 | DeX y escritorio: detectar el modo escritorio, escala de interfaz, cursores (`PointerIcon`), atajos completos, sin decoraciones propias | ⬜ |
+| 5 | Paridad de funciones con las listas de upstream (`upstream/docs/*-parity.md`): impresión, OCR en proceso, firma, formularios JS, redacción, exportación | ⬜ |
+| 6 | Opcional: móvil y tablet sin DeX (misma interfaz, escala mayor, gestos) | ⬜ |
+| 7 | Rendimiento y memoria en ARM, autoguardado ante cierre en segundo plano, firma del APK, F-Droid | ⬜ |
+
+## Riesgos conocidos
+
+1. **Entrada de texto**: egui en Android tiene soporte limitado de teclado en pantalla e IME. En DeX
+   (teclado físico) basta; la composición CJK necesitará trabajo.
+2. **Forks de egui/winit de storytold**: conservan el soporte de Android de winit
+   (`android-native-activity`); si un parche lo rompe, habrá que mantener un parche propio aquí.
+3. **Drivers GPU** (Mali, Adreno) con wgpu: mitigado con glow.
+4. **Seguir a upstream**: cambia a diario. `scripts/sync-upstream.sh` mueve el submódulo, comprueba
+   que los `[patch.crates-io]` siguen iguales y resiembra `Cargo.lock` desde el de upstream.
