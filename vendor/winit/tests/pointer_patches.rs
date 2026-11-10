@@ -80,6 +80,8 @@ fn android_mice_are_mice_not_fingers() {
         "Axis::Hscroll",
         "WindowEvent::MouseInput",
         "mouse_button_bits(motion_event.button_state())",
+        "mouse_button_bit(motion_event.action_button())",
+        "MotionAction::Down | MotionAction::PointerDown => 1",
     ] {
         assert!(mouse.contains(needed), "the Android mouse handling lost `{needed}`");
     }
@@ -88,4 +90,14 @@ fn android_mice_are_mice_not_fingers() {
     for button in ["Left", "Right", "Middle", "Back", "Forward"] {
         assert!(buttons.contains(button), "MOUSE_BUTTONS lost {button}");
     }
+}
+
+#[test]
+fn android_destroy_ends_the_event_loop() {
+    // DexPdfCraft (W-DEX2): GameActivity's onDestroy waits for android_main to return. winit
+    // ignored MainEvent::Destroy, so the loop kept running, the activity's UI thread hung on
+    // close and the next start failed.
+    let android = source("android/mod.rs");
+    let destroy = section(&android, "MainEvent::Destroy => {", "},");
+    assert!(destroy.contains("self.window_target.p.exit()"), "Destroy must end the event loop");
 }

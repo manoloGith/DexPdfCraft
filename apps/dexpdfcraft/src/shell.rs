@@ -26,11 +26,33 @@ pub fn request_close(ctx: Option<&egui::Context>) {
 pub struct Shell {
     app: PdfCraftApp,
     focused: bool,
+    /// Pointer events still to log (diagnostics for new devices: the first few after start).
+    log_pointer: u32,
 }
 
 impl Shell {
     pub fn new(app: PdfCraftApp) -> Self {
-        Shell { app, focused: true }
+        Shell { app, focused: true, log_pointer: 40 }
+    }
+
+    /// Log the first pointer presses and wheel turns (positions only, no content), so a report
+    /// from a device shows whether its mouse reaches the interface.
+    fn log_pointer_events(&mut self, ctx: &egui::Context) {
+        if self.log_pointer == 0 {
+            return;
+        }
+        ctx.input(|i| {
+            for e in &i.events {
+                let line = match e {
+                    egui::Event::PointerButton { button, pressed, pos, .. } => format!("button {button:?} pressed={pressed} at {pos:?}"),
+                    egui::Event::MouseWheel { delta, unit, .. } => format!("wheel {delta:?} {unit:?}"),
+                    egui::Event::Touch { phase, pos, .. } => format!("touch {phase:?} at {pos:?}"),
+                    _ => continue,
+                };
+                log::info!("dexpdfcraft: input: {line}");
+                self.log_pointer = self.log_pointer.saturating_sub(1);
+            }
+        });
     }
 }
 
@@ -45,6 +67,7 @@ impl eframe::App for Shell {
             self.app.autosave_now();
         }
         self.focused = focused;
+        self.log_pointer_events(ctx);
         self.app.logic(ctx, frame);
     }
 

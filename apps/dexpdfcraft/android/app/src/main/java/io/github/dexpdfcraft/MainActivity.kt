@@ -1,5 +1,8 @@
 package io.github.dexpdfcraft
 
+import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +13,7 @@ import androidx.activity.OnBackPressedCallback
 import com.google.androidgamesdk.GameActivity
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.util.concurrent.Executors
 
 /**
@@ -32,7 +36,17 @@ class MainActivity : GameActivity() {
     private var nextRequest = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState) // loads libdexpdfcraft.so
+        val reused = processUsed
+        processUsed = true
+        recordJavaCrashes()
+        super.onCreate(savedInstanceState) // loads libdexpdfcraft.so and starts android_main
+        if (reused) {
+            // This process has already run the library (its window can't be created twice):
+            // start again in a fresh one.
+            Log.w(TAG, "process reused; restarting in a fresh one")
+            restartInFreshProcess()
+            return
+        }
         current = this
         documents = DocumentStore(applicationContext).also { it.start() }
         clipboard = ClipboardBridge(applicationContext)
@@ -43,6 +57,44 @@ class MainActivity : GameActivity() {
             override fun handleOnBackPressed() = nativeEvent("close", "{}")
         })
         if (savedInstanceState == null) handleIntent(intent)
+        showLastCrash()
+    }
+
+    private fun restartInFreshProcess() {
+        startActivity(
+            Intent(this, RestartActivity::class.java)
+                .putExtra(RestartActivity.EXTRA_PID, Process.myPid())
+                .putExtra(RestartActivity.EXTRA_INTENT, Intent(intent)),
+        )
+        finish()
+    }
+
+    /** A Java crash is written where a Rust panic is (the library's `crash.txt`), then reported. */
+    private fun recordJavaCrashes() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        val file = File(filesDir, CRASH_FILE)
+        Thread.setDefaultUncaughtExceptionHandler { thread, e ->
+            runCatching { file.writeText("DexPdfCraft (Java)\n${Log.getStackTraceString(e)}") }
+            previous?.uncaughtException(thread, e)
+        }
+    }
+
+    /** What went wrong last time (a panic or an exception), for the user to pass on. */
+    private fun showLastCrash() {
+        val file = File(filesDir, CRASH_FILE)
+        if (!file.isFile) return
+        val report = runCatching { file.readText() }.getOrDefault("").take(20_000)
+        file.delete()
+        if (report.isBlank()) return
+        AlertDialog.Builder(this)
+            .setTitle(R.string.crash_title)
+            .setMessage(report)
+            .setPositiveButton(R.string.crash_copy) { _, _ ->
+                (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager)
+                    .setPrimaryClip(ClipData.newPlainText("DexPdfCraft error", report))
+            }
+            .setNegativeButton(R.string.crash_close, null)
+            .show()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -54,6 +106,10 @@ class MainActivity : GameActivity() {
     override fun onDestroy() {
         if (current === this) current = null
         super.onDestroy()
+        if (!::documents.isInitialized) {
+            Process.killProcess(Process.myPid())
+            return
+        }
         // The library's window and event loop live for the whole process and can't be created a
         // second time in it, so a destroyed activity ends the process: the next start is a fresh
         // one. Unsaved work is in PdfCraft's crash recovery (it autosaves when the window loses
@@ -97,6 +153,7 @@ class MainActivity : GameActivity() {
             "clip_files" -> { clipboard.setFiles(args.getJSONArray("paths")); null }
             "toast" -> { toast(args.getString("text")); null }
             "finish" -> { runOnUiThread { finishAndRemoveTask() }; null }
+            "restart" -> { runOnUiThread { restartInFreshProcess() }; null }
             else -> { Log.w(TAG, "bridge: unknown operation $op"); null }
         }
     } catch (e: Exception) {
@@ -188,6 +245,10 @@ class MainActivity : GameActivity() {
     companion object {
         private const val TAG = "dexpdfcraft"
         private const val REQUEST_BASE = 0x4000
+        private const val CRASH_FILE = "crash.txt"
+
+        /** This process has created a MainActivity (and so started the library) before. */
+        @Volatile private var processUsed = false
 
         // The rfd shim's `Kind`, in its order.
         const val KIND_OPEN_FILE = 0

@@ -67,6 +67,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Restarts the app in a fresh process when Android reuses one it has already run in. -->
+        <activity
+            android:name=".RestartActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:process=":restart"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Copied images and files go to the clipboard as content URIs of the app's own files. -->
         <provider
             android:name="androidx.core.content.FileProvider"

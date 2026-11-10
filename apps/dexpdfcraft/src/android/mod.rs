@@ -7,8 +7,18 @@ pub mod events;
 mod pickers;
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use winit::platform::android::activity::AndroidApp;
+use winit::platform::android::activity::input::Axis;
+
+/// `android_main` has run in this process. winit's event loop can be created once per process,
+/// so a second activity in the same process can't start the window (MainActivity ends the
+/// process when its activity is destroyed; this guards the rest).
+static STARTED: AtomicBool = AtomicBool::new(false);
+
+/// What a panic leaves for the next start to show (MainActivity reads it).
+const CRASH_FILE: &str = "crash.txt";
 
 /// Entry point, called by android-activity on the activity's own thread.
 #[allow(unsafe_code)] // `no_mangle` is how android-activity's glue finds the entry point
@@ -17,6 +27,15 @@ fn android_main(app: AndroidApp) {
     android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info).with_tag("dexpdfcraft"));
     log::info!("dexpdfcraft: starting, engine {}", pdfcraft_engine::build_info::VERSION);
     let data = app.internal_data_path().unwrap_or_else(|| PathBuf::from("/data/local/tmp/dexpdfcraft"));
+    record_panics(data.join(CRASH_FILE));
+    if STARTED.swap(true, Ordering::SeqCst) {
+        // MainActivity restarts the app in a fresh process (RestartActivity).
+        log::warn!("dexpdfcraft: android_main called again in the same process; not starting");
+        return;
+    }
+    // GameActivity copies only X and Y from motion events unless asked: the wheel's axes.
+    app.enable_motion_axis(Axis::Vscroll);
+    app.enable_motion_axis(Axis::Hscroll);
     let config = app.config();
     let locale = crate::posix_locale(config.language().as_deref(), config.country().as_deref());
     set_environment(&data, &locale);
@@ -44,6 +63,22 @@ fn android_main(app: AndroidApp) {
     // event loop can be created only once per process).
     log::info!("dexpdfcraft: the window closed; finishing the activity");
     bridge::call("finish", "", None);
+}
+
+/// Write every panic (message, place, backtrace) to `file`, after the default hook has logged it,
+/// so the next start can show it to the user (MainActivity), who may have no adb.
+fn record_panics(file: PathBuf) {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        default(info);
+        let report = format!(
+            "DexPdfCraft {} (engine {})\n{info}\n\n{}",
+            env!("CARGO_PKG_VERSION"),
+            pdfcraft_engine::build_info::VERSION,
+            std::backtrace::Backtrace::force_capture()
+        );
+        let _ = std::fs::write(&file, report);
+    }));
 }
 
 /// PdfCraft keeps settings, recovery data and its dictionary under `$HOME` and the XDG folders

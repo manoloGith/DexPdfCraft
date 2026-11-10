@@ -64,6 +64,15 @@ PdfCraft (Rust) ──rfd / arboard──▶ shims ──backends──▶ andro
 | Al cerrar no pregunta si se quieren guardar los cambios | winit ignora la destrucción de la actividad, así que PdfCraft nunca recibía la petición de cierre | «Atrás» (gesto o tecla) llega a PdfCraft como cierre de ventana (`shell.rs`) y sale su pregunta «¿guardar cambios?». Solo cuando PdfCraft deja cerrar, la app pide a Android que termine la actividad. La X de una ventana de DeX la gestiona el sistema y no se puede interceptar; para ese caso, PdfCraft guarda en su recuperación cada vez que la ventana pierde el foco, y el siguiente arranque ofrece recuperar el trabajo |
 | Tras cerrar, al volver a abrir la app se cierra sola | El proceso seguía vivo con el bucle de eventos de winit, que no se puede crear dos veces en un proceso | Al destruirse la actividad se termina el proceso (`onDestroy`), después de esperar a que acaben de escribirse los guardados pendientes en los documentos originales. Cada arranque es un proceso nuevo |
 
+### Segunda ronda (tras probar el APK anterior)
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| La rueda seguía sin funcionar | GameActivity solo copia los ejes X e Y de los eventos; `AXIS_VSCROLL`/`AXIS_HSCROLL` llegaban a cero | `android_main` activa los dos ejes (`enable_motion_axis`) |
+| El clic izquierdo dejó de funcionar | Probablemente el ratón de DeX no rellena los bits de botón en `DOWN`/`UP`, y W-DEX1 dependía solo de ellos | Si faltan los bits, `DOWN`/`UP` cuentan como botón principal y `BUTTON_PRESS`/`BUTTON_RELEASE` usan su botón. Los primeros 40 clics y giros de rueda se escriben en el log (`adb logcat -s dexpdfcraft`) para confirmarlo en el dispositivo |
+| Tras cerrar, la app se cierra al volver a abrirla | `GameActivity.onDestroy` espera en el hilo principal a que termine `android_main`, pero el bucle de winit ignoraba la destrucción: la actividad se quedaba colgada y el proceso, inutilizable | W-DEX2: `MainEvent::Destroy` termina el bucle. Si aun así Android reutiliza un proceso que ya ejecutó la app, `RestartActivity` (en el proceso `:restart`) la vuelve a abrir en uno nuevo |
+| Sin `adb` no hay forma de saber qué falló | — | Un error de Rust (panic) o de Java se guarda en `crash.txt` y se muestra en el siguiente arranque, con un botón para copiarlo |
+
 ## Pendiente
 
 - **Imprimir** con `PrintManager` y **compartir** desde PdfCraft. La app de escritorio imprime con

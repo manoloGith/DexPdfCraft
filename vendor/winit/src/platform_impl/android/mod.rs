@@ -45,6 +45,19 @@ const MOUSE_BUTTONS: [(u32, event::MouseButton); 5] = [
     (16, event::MouseButton::Forward), // BUTTON_FORWARD
 ];
 
+/// The bit of one mouse button, as in [`mouse_button_bits`] (0 for other buttons).
+fn mouse_button_bit(button: android_activity::input::Button) -> u32 {
+    use android_activity::input::Button;
+    match button {
+        Button::Primary => 1,
+        Button::Secondary => 2,
+        Button::Tertiary => 4,
+        Button::Back => 8,
+        Button::Forward => 16,
+        _ => 0,
+    }
+}
+
 /// The mouse buttons down in `state`, as Android's bits (stylus buttons left out).
 fn mouse_button_bits(state: ButtonState) -> u32 {
     [state.primary(), state.secondary(), state.teriary(), state.back(), state.forward()]
@@ -309,9 +322,11 @@ impl<T: 'static> EventLoop<T> {
                     warn!("TODO: forward onStop notification to application");
                 },
                 MainEvent::Destroy => {
-                    // XXX: maybe exit mainloop to drop things before being
-                    // killed by the OS?
-                    warn!("TODO: forward onDestroy notification to application");
+                    // DexPdfCraft (W-DEX2): end the loop. GameActivity's onDestroy waits on the
+                    // UI thread for android_main to return; a loop that keeps running deadlocks
+                    // it (the app hangs on close and the next start fails).
+                    debug!("Activity destroyed - exiting the event loop");
+                    self.window_target.p.exit();
                 },
                 MainEvent::InsetsChanged { .. } => {
                     // XXX: how to forward this state to applications?
@@ -407,8 +422,19 @@ impl<T: 'static> EventLoop<T> {
                 let pointer = motion_event.pointer_at_index(0);
                 let position = PhysicalPosition { x: pointer.x() as f64, y: pointer.y() as f64 };
                 // Buttons from the button-state bits, whatever the action that carries them (the
-                // order of DOWN and BUTTON_PRESS differs between devices and buttons).
-                let now = mouse_button_bits(motion_event.button_state());
+                // order of DOWN and BUTTON_PRESS differs between devices and buttons). Some
+                // pointers (DeX's touchpad, some mice) leave the bits empty: then DOWN and UP are
+                // the primary button, and BUTTON_PRESS/RELEASE name theirs.
+                let bits = mouse_button_bits(motion_event.button_state());
+                let action_bit = mouse_button_bit(motion_event.action_button());
+                let now = match motion_event.action() {
+                    _ if bits != 0 => bits,
+                    MotionAction::Down | MotionAction::PointerDown => 1,
+                    MotionAction::Move => self.mouse_buttons & 1,
+                    MotionAction::ButtonPress => self.mouse_buttons | action_bit,
+                    MotionAction::ButtonRelease => self.mouse_buttons & !action_bit,
+                    _ => 0,
+                };
                 let changed = now ^ self.mouse_buttons;
                 self.mouse_buttons = now;
                 let mut send = |event| {
