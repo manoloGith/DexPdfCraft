@@ -9,7 +9,7 @@ submódulo.
 |---|---|---|
 | 0 | Repositorio: submódulo `upstream/`, workspace Cargo con los `[patch]` de upstream, Gradle + cargo-ndk, CI, licencias y marcas | ✅ |
 | 1 | Prueba técnica: eframe/winit en Android (GameActivity), wgpu con glow de reserva, motor y renderizador de PdfCraft en ARM64, entrada de DeX | ✅ código · ⬜ probar en DeX ([phase-1.md](phase-1.md)) |
-| 2 | `pdfcraft-ui-egui` en Android: `cfg(target_os = "android")` para `rfd`, `arboard`, `craft-update`, fontconfig, canal de control e instancia única; `platform/android` (fuentes de `/system/fonts`, rutas de datos, idioma) | ⬜ |
+| 2 | `pdfcraft-ui-egui` en Android: shims de `rfd` y `arboard` en el fork ([fork.md](fork.md)), sin logotipos de ArtCraft; la app arranca `PdfCraftApp` con las carpetas de datos en el almacenamiento privado; compila para arm64 | 🚧 compila y arranca en escritorio · ⬜ probar en DeX · ⬜ fuentes de `/system/fonts`, idioma del sistema |
 | 3 | Puente Kotlin ↔ Rust (JNI en un crate aislado): SAF abrir/guardar/guardar como, intents VIEW/SEND, compartir, `PrintManager`, lectura en voz alta, arrastrar y soltar | ⬜ |
 | 4 | DeX y escritorio: detectar el modo escritorio, escala de interfaz, cursores (`PointerIcon`), atajos completos, sin decoraciones propias | ⬜ |
 | 5 | Paridad de funciones con las listas de upstream (`upstream/docs/*-parity.md`): impresión, OCR en proceso, firma, formularios JS, redacción, exportación | ⬜ |

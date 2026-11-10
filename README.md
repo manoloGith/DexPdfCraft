@@ -8,9 +8,10 @@ barra rápida, pestañas, paneles laterales, paleta de comandos) y **todas** sus
 se reescribe la interfaz: se compila para Android la propia interfaz egui de PdfCraft
 (`pdfcraft-ui-egui`) y se le añade una capa de plataforma Android.
 
-> Estado: **fase 1 (prueba técnica)**. La app abre aún una ventana de prueba con la disposición del
-> escritorio que comprueba el renderizado, el ratón, el teclado y las ventanas de DeX. La interfaz
-> completa llega en la fase 2 ([docs/plan.md](docs/plan.md)).
+> Estado: **fase 2**. La app ya arranca la interfaz completa de PdfCraft (compila para Android arm64 y
+> funciona en escritorio). Faltan el selector de archivos y el portapapeles de Android (fase 3): hasta
+> entonces la app abre un PDF de muestra y los diálogos de abrir y guardar se cancelan. Plan en
+> [docs/plan.md](docs/plan.md); los cambios a PdfCraft, en [docs/fork.md](docs/fork.md).
 
 ## Cómo está hecho
 
@@ -19,11 +20,13 @@ DexPdfCraft/
 ├── upstream/                  submódulo: storytold/pdfcraft, fijado a un commit, sin cambios
 ├── apps/dexpdfcraft/          el crate Rust de la app (cdylib que carga Android)
 │   ├── src/lib.rs             android_main → eframe (wgpu, con glow de reserva)
-│   ├── src/app.rs             ventana de prueba de la fase 1
+│   ├── src/pdfcraft.rs        arranca la interfaz de PdfCraft (PdfCraftApp)
+│   ├── src/app.rs             ventana de diagnóstico de la fase 1 (feature `probe`)
 │   ├── src/doc.rs             abrir y renderizar con pdfcraft-render
 │   ├── src/main.rs            la misma ventana en escritorio, para iterar sin dispositivo
 │   └── android/               proyecto Gradle: GameActivity + manifiesto para DeX
-├── scripts/sync-upstream.sh   mueve el submódulo y comprueba los [patch] de Cargo
+├── patches/upstream/          commits del fork de PdfCraft (hasta que esté en GitHub)
+├── scripts/                   sync-upstream, apply/export-fork-patches
 └── docs/                      plan por fases y notas de cada fase
 ```
 
@@ -47,6 +50,12 @@ Primero clona con el submódulo:
 
 ```bash
 git clone --recursive https://github.com/manoloGith/DexPdfCraft
+```
+
+Después, los cambios del fork de PdfCraft sobre el submódulo ([docs/fork.md](docs/fork.md)):
+
+```bash
+cd DexPdfCraft && scripts/apply-fork-patches.sh
 ```
 
 Después, el APK de depuración (arm64-v8a para el dispositivo, x86_64 para el emulador):

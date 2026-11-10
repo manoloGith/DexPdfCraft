@@ -16,6 +16,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: PdfCraft fork patches (patches/upstream, until the fork is on GitHub)
+        run: scripts/apply-fork-patches.sh
+
       - name: Rust (rust-toolchain.toml) and cargo-ndk
         run: |
           rustup show active-toolchain || rustup toolchain install
