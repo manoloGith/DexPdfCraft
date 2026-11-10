@@ -19,6 +19,11 @@ jobs:
       - name: PdfCraft fork patches (patches/upstream, until the fork is on GitHub)
         run: scripts/apply-fork-patches.sh
 
+      - name: Interface translations (craft-i18n at upstream's pinned revision)
+        run: |
+          scripts/fetch-build-inputs.sh | sed 's/^export //; s/"//g' >> "$GITHUB_ENV"
+          echo "CRAFT_I18N_REQUIRED=1" >> "$GITHUB_ENV"
+
       - name: Rust (rust-toolchain.toml) and cargo-ndk
         run: |
           rustup show active-toolchain || rustup toolchain install

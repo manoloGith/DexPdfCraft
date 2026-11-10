@@ -1,3 +1,4 @@
 /target/
 *.apk
 local.properties
+/.build-inputs/

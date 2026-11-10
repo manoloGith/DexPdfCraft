@@ -44,9 +44,13 @@ abstract class CargoNdkBuild : DefaultTask() {
             "--remap-path-prefix=$cargoHome=/cargo",
         )
         val profile = if (release.get()) listOf("--release") else emptyList()
+        // The interface translations (scripts/fetch-build-inputs.sh); without them, English only.
+        val i18n = System.getenv("CRAFT_I18N_DIR")?.takeIf { it.isNotBlank() }
+            ?: File(workspaceDir.get(), ".build-inputs/craft-i18n").takeIf { it.isDirectory }?.absolutePath
         execOperations.exec {
             workingDir(workspaceDir.get())
             environment("ANDROID_NDK_HOME", ndkDir.get())
+            if (i18n != null) environment("CRAFT_I18N_DIR", i18n)
             environment("CARGO_ENCODED_RUSTFLAGS", remap.joinToString("\u001f"))
             commandLine(
                 listOf(cargo.get(), "ndk") + targets +

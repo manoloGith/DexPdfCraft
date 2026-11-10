@@ -69,6 +69,31 @@ fn create(cc: &eframe::CreationContext<'_>, launch: Launch) -> Box<dyn eframe::A
     Box::new(pdfcraft::create(cc, &launch))
 }
 
+/// The system language as a POSIX locale (`es_ES.UTF-8`), which PdfCraft's Auto language reads
+/// from `LANG` as on Linux. `None` parts give `C.UTF-8` (English).
+pub fn posix_locale(language: Option<&str>, country: Option<&str>) -> String {
+    let clean = |s: &str| s.chars().filter(char::is_ascii_alphabetic).collect::<String>();
+    match (language.map(clean).filter(|l| !l.is_empty()), country.map(clean).filter(|c| !c.is_empty())) {
+        (Some(l), Some(c)) => format!("{}_{}.UTF-8", l.to_ascii_lowercase(), c.to_ascii_uppercase()),
+        (Some(l), None) => format!("{}.UTF-8", l.to_ascii_lowercase()),
+        _ => "C.UTF-8".to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::posix_locale;
+
+    #[test]
+    fn the_android_locale_becomes_a_posix_one() {
+        assert_eq!(posix_locale(Some("es"), Some("ES")), "es_ES.UTF-8");
+        assert_eq!(posix_locale(Some("pt"), Some("br")), "pt_BR.UTF-8");
+        assert_eq!(posix_locale(Some("de"), None), "de.UTF-8");
+        assert_eq!(posix_locale(None, Some("US")), "C.UTF-8");
+        assert_eq!(posix_locale(Some("e;s"), Some("")), "es.UTF-8");
+    }
+}
+
 #[cfg(target_os = "android")]
 mod android {
     use std::path::{Path, PathBuf};
@@ -82,7 +107,9 @@ mod android {
         android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info).with_tag("dexpdfcraft"));
         log::info!("dexpdfcraft: starting, engine {}", pdfcraft_engine::build_info::VERSION);
         let data = app.internal_data_path().unwrap_or_else(|| PathBuf::from("/data/local/tmp/dexpdfcraft"));
-        point_data_folders_at(&data);
+        let config = app.config();
+        let locale = crate::posix_locale(config.language().as_deref(), config.country().as_deref());
+        set_environment(&data, &locale);
         let launch = crate::Launch {
             platform: crate::app::Platform { os: "android", source: "bundled sample".into() },
             files: Vec::new(),
@@ -101,9 +128,10 @@ mod android {
     }
 
     /// PdfCraft keeps settings, recovery data and its dictionary under `$HOME` and the XDG folders
-    /// on Linux-like systems; an Android process has neither. Point them at the app's private
-    /// storage, so autosave and crash recovery work unchanged.
-    fn point_data_folders_at(data: &Path) {
+    /// on Linux-like systems, and takes its Auto language from `LANG`; an Android process has
+    /// none of them. Point the folders at the app's private storage, so autosave and crash
+    /// recovery work unchanged, and `LANG` at the system language.
+    fn set_environment(data: &Path, locale: &str) {
         let vars = [
             ("HOME", data.to_path_buf()),
             ("XDG_DATA_HOME", data.join("share")),
@@ -116,12 +144,18 @@ mod android {
             if let Err(e) = std::fs::create_dir_all(&dir) {
                 log::warn!("dexpdfcraft: {}: {e}", dir.display());
             }
-            // SAFETY: runs first thing in `android_main`, before this library starts any thread
-            // that reads the environment (eframe, the render pool and PdfCraft start later).
-            #[allow(unsafe_code)]
-            unsafe {
-                std::env::set_var(key, &dir);
-            }
+            set_var(key, dir.as_os_str());
+        }
+        log::info!("dexpdfcraft: locale {locale}");
+        set_var("LANG", std::ffi::OsStr::new(locale));
+    }
+
+    fn set_var(key: &str, value: &std::ffi::OsStr) {
+        // SAFETY: called first thing in `android_main`, before this library starts any thread that
+        // reads the environment (eframe, the render pool and PdfCraft start later).
+        #[allow(unsafe_code)]
+        unsafe {
+            std::env::set_var(key, value);
         }
     }
 }

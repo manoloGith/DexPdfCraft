@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 10 Nov 2026 13:28:48 +0000
-Subject: [PATCH] Android: rfd and arboard shims, no ArtCraft marks
+Subject: [PATCH 1/2] Android: rfd and arboard shims, no ArtCraft marks
  (DexPdfCraft fork)
 
 PdfCraft's egui interface builds for Android (aarch64-linux-android):
