@@ -73,6 +73,22 @@ PdfCraft (Rust) ──rfd / arboard──▶ shims ──backends──▶ andro
 | Tras cerrar, la app se cierra al volver a abrirla | `GameActivity.onDestroy` espera en el hilo principal a que termine `android_main`, pero el bucle de winit ignoraba la destrucción: la actividad se quedaba colgada y el proceso, inutilizable | W-DEX2: `MainEvent::Destroy` termina el bucle. Si aun así Android reutiliza un proceso que ya ejecutó la app, `RestartActivity` (en el proceso `:restart`) la vuelve a abrir en uno nuevo |
 | Sin `adb` no hay forma de saber qué falló | — | Un error de Rust (panic) o de Java se guarda en `crash.txt` y se muestra en el siguiente arranque, con un botón para copiarlo |
 
+### Tercera ronda
+
+En DeX la rueda funcionaba, pero ninguno de los dos botones; en el móvil con el dedo todo iba bien.
+
+- **El ratón ya no pasa por GameActivity ni por winit.** `MainActivity` pone sus propios listeners en la
+  superficie de GameActivity. El ratón, el touchpad o una herramienta de tipo ratón van con
+  `nativePointer` a `src/pointer.rs`, que los convierte en eventos de egui: movimiento, hover,
+  botones (con la API de `MotionEvent`: `getButtonState`, `getActionButton`, y `DOWN`/`UP` cuando los
+  bits vienen vacíos), rueda y modificadores. El táctil sigue yendo a GameActivity
+  (`processMotionEvent`), que es lo que ya funcionaba. Tests en `pointer.rs`.
+- **Diagnóstico sin adb.** `files/diag.log` registra el ciclo de vida de la actividad, la pantalla, la
+  densidad, los primeros 60 eventos de ratón tal como llegan de Android y los hitos de la librería
+  (arranque, renderizador, fin del bucle, panics). Si la sesión anterior no terminó con normalidad o
+  hubo un error, el siguiente arranque muestra el informe con un botón «Copiar informe». La build de
+  depuración añade un segundo icono, «Diagnóstico DexPdfCraft», para verlo cuando se quiera.
+
 ## Pendiente
 
 - **Imprimir** con `PrintManager` y **compartir** desde PdfCraft. La app de escritorio imprime con

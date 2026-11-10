@@ -20,6 +20,22 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 /// What a panic leaves for the next start to show (MainActivity reads it).
 const CRASH_FILE: &str = "crash.txt";
 
+/// The diagnostics log MainActivity keeps (lifecycle, first mouse events); the library adds its
+/// own milestones, so a report from a device without adb tells what happened.
+const DIAG_FILE: &str = "diag.log";
+static DIAG: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// Append a line to the diagnostics log (and logcat).
+pub fn diag(line: &str) {
+    log::info!("dexpdfcraft: {line}");
+    let Some(path) = DIAG.get() else { return };
+    use std::io::Write as _;
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+        let _ = writeln!(f, "{now} rust: {line}");
+    }
+}
+
 /// Entry point, called by android-activity on the activity's own thread.
 #[allow(unsafe_code)] // `no_mangle` is how android-activity's glue finds the entry point
 #[unsafe(no_mangle)]
@@ -27,12 +43,14 @@ fn android_main(app: AndroidApp) {
     android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info).with_tag("dexpdfcraft"));
     log::info!("dexpdfcraft: starting, engine {}", pdfcraft_engine::build_info::VERSION);
     let data = app.internal_data_path().unwrap_or_else(|| PathBuf::from("/data/local/tmp/dexpdfcraft"));
+    let _ = DIAG.set(data.join(DIAG_FILE));
     record_panics(data.join(CRASH_FILE));
     if STARTED.swap(true, Ordering::SeqCst) {
         // MainActivity restarts the app in a fresh process (RestartActivity).
-        log::warn!("dexpdfcraft: android_main called again in the same process; not starting");
+        diag("android_main called again in the same process; not starting");
         return;
     }
+    diag(&format!("android_main starts (engine {})", pdfcraft_engine::build_info::VERSION));
     // GameActivity copies only X and Y from motion events unless asked: the wheel's axes.
     app.enable_motion_axis(Axis::Vscroll);
     app.enable_motion_axis(Axis::Hscroll);
@@ -61,7 +79,7 @@ fn android_main(app: AndroidApp) {
     // The window closed (PdfCraft allowed it, after asking about unsaved changes): close the
     // activity too. Its onDestroy ends the process, so the next start gets a fresh one (winit's
     // event loop can be created only once per process).
-    log::info!("dexpdfcraft: the window closed; finishing the activity");
+    diag("the event loop ended; finishing the activity");
     bridge::call("finish", "", None);
 }
 
@@ -77,7 +95,8 @@ fn record_panics(file: PathBuf) {
             pdfcraft_engine::build_info::VERSION,
             std::backtrace::Backtrace::force_capture()
         );
-        let _ = std::fs::write(&file, report);
+        let _ = std::fs::write(&file, &report);
+        diag(&format!("panic: {info}"));
     }));
 }
 

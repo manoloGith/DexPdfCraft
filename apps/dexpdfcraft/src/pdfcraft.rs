@@ -24,9 +24,16 @@ pub fn create(cc: &eframe::CreationContext<'_>, launch: &Launch) -> PdfCraftApp 
     match &cc.wgpu_render_state {
         Some(state) => {
             let adapter = state.adapter.get_info();
-            log::info!("dexpdfcraft: renderer wgpu, {} ({:?}, {:?})", adapter.name, adapter.device_type, adapter.backend);
+            let line = format!("renderer wgpu, {} ({:?}, {:?})", adapter.name, adapter.device_type, adapter.backend);
+            log::info!("dexpdfcraft: {line}");
+            #[cfg(target_os = "android")]
+            crate::android::diag(&line);
         }
-        None => log::info!("dexpdfcraft: renderer OpenGL ES (glow)"),
+        None => {
+            log::info!("dexpdfcraft: renderer OpenGL ES (glow)");
+            #[cfg(target_os = "android")]
+            crate::android::diag("renderer OpenGL ES (glow)");
+        }
     }
     // "Open with" and "Share" from other apps arrive as the desktop's OS events do.
     #[cfg(target_os = "android")]

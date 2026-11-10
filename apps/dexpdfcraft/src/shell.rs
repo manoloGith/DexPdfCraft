@@ -96,6 +96,8 @@ impl eframe::App for Shell {
     }
 
     fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        // The mouse on Android (MainActivity hands it over; nothing is queued elsewhere).
+        raw_input.events.extend(crate::pointer::drain(ctx.pixels_per_point()));
         self.app.raw_input_hook(ctx, raw_input);
     }
 }

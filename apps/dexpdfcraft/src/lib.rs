@@ -9,6 +9,7 @@
 pub mod app;
 pub mod doc;
 pub mod pdfcraft;
+pub mod pointer;
 pub mod protocol;
 pub mod shell;
 
@@ -57,6 +58,8 @@ pub fn run(mut options: impl FnMut(eframe::Renderer) -> eframe::NativeOptions, l
             Ok(()) => return,
             Err(e) => {
                 log::error!("dexpdfcraft: the {renderer} renderer could not start: {e}");
+                #[cfg(target_os = "android")]
+                android::diag(&format!("the {renderer} renderer could not start: {e}"));
                 last_error = Some(e);
             }
         }

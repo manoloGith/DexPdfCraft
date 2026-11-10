@@ -4,10 +4,13 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import com.google.androidgamesdk.GameActivity
@@ -38,15 +41,22 @@ class MainActivity : GameActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val reused = processUsed
         processUsed = true
+        Diag.init(filesDir)
+        Diag.sessionStart(
+            "pid=${Process.myPid()} reused=$reused restored=${savedInstanceState != null} " +
+                "multiWindow=$isInMultiWindowMode ${describe(resources.configuration)} " +
+                "android=${android.os.Build.VERSION.SDK_INT} device=${android.os.Build.MODEL}",
+        )
         recordJavaCrashes()
         super.onCreate(savedInstanceState) // loads libdexpdfcraft.so and starts android_main
         if (reused) {
             // This process has already run the library (its window can't be created twice):
             // start again in a fresh one.
-            Log.w(TAG, "process reused; restarting in a fresh one")
+            Diag.sessionEnd("process reused; restarting in a fresh one")
             restartInFreshProcess()
             return
         }
+        takeMouseInput()
         current = this
         documents = DocumentStore(applicationContext).also { it.start() }
         clipboard = ClipboardBridge(applicationContext)
@@ -57,8 +67,83 @@ class MainActivity : GameActivity() {
             override fun handleOnBackPressed() = nativeEvent("close", "{}")
         })
         if (savedInstanceState == null) handleIntent(intent)
-        showLastCrash()
+        showReport(onlyIfSomethingWentWrong = !isDiagnosticsLaunch(intent))
     }
+
+    // --- Mouse ---------------------------------------------------------------------------------
+
+    /** Mouse events logged this session (the first few, to see what a device sends). */
+    private var mouseLogged = 0
+    /** Buttons down, as the library was last told. */
+    private var mouseButtons = 0
+
+    /**
+     * Mouse events go to the library directly (nativePointer) instead of through GameActivity and
+     * winit, which report a mouse as a finger: hover, both buttons and the wheel then work as on a
+     * desktop. Touch still goes to GameActivity.
+     */
+    private fun takeMouseInput() {
+        val surface = mSurfaceView ?: return
+        surface.setOnTouchListener { _, e -> if (isMouse(e)) onMouse(e) else processMotionEvent(e) }
+        surface.setOnGenericMotionListener { _, e -> if (isMouse(e)) onMouse(e) else processMotionEvent(e) }
+    }
+
+    private fun isMouse(e: MotionEvent): Boolean =
+        e.isFromSource(InputDevice.SOURCE_MOUSE) || e.isFromSource(InputDevice.SOURCE_TOUCHPAD) ||
+            (e.pointerCount > 0 && e.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE)
+
+    private fun onMouse(e: MotionEvent): Boolean {
+        val action = e.actionMasked
+        val bits = e.buttonState and 0x1f
+        // Some pointers leave the button bits empty: then DOWN/UP are the primary button and
+        // BUTTON_PRESS/RELEASE name theirs.
+        val buttons = when {
+            bits != 0 -> bits
+            action == MotionEvent.ACTION_DOWN -> 1
+            action == MotionEvent.ACTION_MOVE -> mouseButtons and 1
+            action == MotionEvent.ACTION_BUTTON_PRESS -> mouseButtons or e.actionButton
+            action == MotionEvent.ACTION_BUTTON_RELEASE -> mouseButtons and e.actionButton.inv()
+            else -> 0
+        } and 0x1f
+        val scroll = action == MotionEvent.ACTION_SCROLL
+        val h = if (scroll) e.getAxisValue(MotionEvent.AXIS_HSCROLL) else 0f
+        val v = if (scroll) e.getAxisValue(MotionEvent.AXIS_VSCROLL) else 0f
+        val gone = action == MotionEvent.ACTION_HOVER_EXIT && buttons == 0
+        if (mouseLogged < MOUSE_LOG_LIMIT && (action != MotionEvent.ACTION_HOVER_MOVE || mouseLogged < 3)) {
+            mouseLogged++
+            Diag.log(
+                "mouse ${MotionEvent.actionToString(action)} src=0x${Integer.toHexString(e.source)} " +
+                    "tool=${e.getToolType(0)} state=${e.buttonState} actionButton=${e.actionButton} " +
+                    "-> buttons=$buttons wheel=($h,$v) at (${e.x.toInt()},${e.y.toInt()})",
+            )
+        }
+        mouseButtons = if (gone) 0 else buttons
+        nativePointer(gone, e.x, e.y, buttons, h, v, e.metaState)
+        return true
+    }
+
+    // --- Diagnostics ---------------------------------------------------------------------------
+
+    private fun describe(c: Configuration) =
+        "screen=${c.screenWidthDp}x${c.screenHeightDp}dp density=${c.densityDpi} " +
+            "uiMode=0x${Integer.toHexString(c.uiMode)} display=${display?.displayId}"
+
+    override fun onStart() { super.onStart(); Diag.log("onStart") }
+    override fun onResume() { super.onResume(); Diag.log("onResume") }
+    override fun onPause() { Diag.log("onPause"); super.onPause() }
+    override fun onStop() { Diag.log("onStop"); super.onStop() }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        Diag.log("onConfigurationChanged ${describe(newConfig)}")
+        super.onConfigurationChanged(newConfig)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        Diag.log("onWindowFocusChanged $hasFocus")
+        super.onWindowFocusChanged(hasFocus)
+    }
+
+    private fun isDiagnosticsLaunch(i: Intent?) = i?.component?.className?.endsWith(".Diagnostics") == true
 
     private fun restartInFreshProcess() {
         startActivity(
@@ -79,19 +164,28 @@ class MainActivity : GameActivity() {
         }
     }
 
-    /** What went wrong last time (a panic or an exception), for the user to pass on. */
-    private fun showLastCrash() {
-        val file = File(filesDir, CRASH_FILE)
-        if (!file.isFile) return
-        val report = runCatching { file.readText() }.getOrDefault("").take(20_000)
-        file.delete()
-        if (report.isBlank()) return
+    /**
+     * The report for the user to pass on: what went wrong last time (a panic, an exception, or a
+     * session that ended without closing normally) and the diagnostics log. Shown at start when
+     * something went wrong, and always from the debug build's "Diagnostics" icon.
+     */
+    private fun showReport(onlyIfSomethingWentWrong: Boolean) {
+        val crashFile = File(filesDir, CRASH_FILE)
+        val crash = if (crashFile.isFile) runCatching { crashFile.readText() }.getOrDefault("") else ""
+        crashFile.delete()
+        val unclean = Diag.unclean
+        if (onlyIfSomethingWentWrong && crash.isBlank() && unclean == null) return
+        val report = buildString {
+            if (crash.isNotBlank()) append(crash).append("\n\n")
+            if (unclean != null) append("-- previous session (did not end normally) --\n").append(unclean).append("\n\n")
+            append("-- log --\n").append(Diag.text().takeLast(12_000))
+        }.take(30_000)
         AlertDialog.Builder(this)
-            .setTitle(R.string.crash_title)
+            .setTitle(if (crash.isBlank() && unclean == null) R.string.report_title else R.string.crash_title)
             .setMessage(report)
             .setPositiveButton(R.string.crash_copy) { _, _ ->
                 (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager)
-                    .setPrimaryClip(ClipData.newPlainText("DexPdfCraft error", report))
+                    .setPrimaryClip(ClipData.newPlainText("DexPdfCraft report", report))
             }
             .setNegativeButton(R.string.crash_close, null)
             .show()
@@ -99,14 +193,18 @@ class MainActivity : GameActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Diag.log("onNewIntent ${intent.action}")
         setIntent(intent)
-        handleIntent(intent)
+        if (isDiagnosticsLaunch(intent)) showReport(onlyIfSomethingWentWrong = false) else handleIntent(intent)
     }
 
     override fun onDestroy() {
+        Diag.log("onDestroy finishing=$isFinishing changingConfigurations=$isChangingConfigurations")
         if (current === this) current = null
         super.onDestroy()
+        Diag.log("onDestroy: the library has stopped")
         if (!::documents.isInitialized) {
+            Diag.sessionEnd("activity destroyed before it started")
             Process.killProcess(Process.myPid())
             return
         }
@@ -114,8 +212,8 @@ class MainActivity : GameActivity() {
         // second time in it, so a destroyed activity ends the process: the next start is a fresh
         // one. Unsaved work is in PdfCraft's crash recovery (it autosaves when the window loses
         // focus) and is offered back then.
-        Log.i(TAG, "activity destroyed; ending the process")
         documents.flush(timeoutMs = 4_000)
+        Diag.sessionEnd("activity destroyed; ending the process")
         Process.killProcess(Process.myPid())
     }
 
@@ -242,10 +340,14 @@ class MainActivity : GameActivity() {
     /** An event for the library: `picked` `{id, paths}`, `open` `{paths}` or `close` `{}`. */
     private external fun nativeEvent(op: String, json: String)
 
+    /** One mouse event, in the surface's pixels (see `pointer.rs`). */
+    private external fun nativePointer(gone: Boolean, x: Float, y: Float, buttons: Int, hscroll: Float, vscroll: Float, meta: Int)
+
     companion object {
         private const val TAG = "dexpdfcraft"
         private const val REQUEST_BASE = 0x4000
         private const val CRASH_FILE = "crash.txt"
+        private const val MOUSE_LOG_LIMIT = 60
 
         /** This process has created a MainActivity (and so started the library) before. */
         @Volatile private var processUsed = false

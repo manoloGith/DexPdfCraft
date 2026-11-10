@@ -20,6 +20,13 @@ pub fn poll() -> Vec<OsEvent> {
     if paths.is_empty() { Vec::new() } else { vec![OsEvent::Open(paths)] }
 }
 
+/// Wake the interface (something was queued for its next frame).
+pub fn wake() {
+    if let Some(ctx) = CONTEXT.get() {
+        ctx.request_repaint();
+    }
+}
+
 pub fn dispatch(op: &str, json: &str) {
     match op {
         "picked" => match crate::protocol::parse_picked(json) {

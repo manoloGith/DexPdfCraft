@@ -93,3 +93,29 @@ pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativeEvent<'call
         })
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
+
+/// `MainActivity.nativePointer(...)`: one mouse event (see crate::pointer).
+#[allow(unsafe_code)] // `no_mangle`: the JVM finds native methods by their exported name
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)] // the JNI signature
+pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativePointer<'caller>(
+    _unowned: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    gone: jni::sys::jboolean,
+    x: jni::sys::jfloat,
+    y: jni::sys::jfloat,
+    buttons: jni::sys::jint,
+    hscroll: jni::sys::jfloat,
+    vscroll: jni::sys::jfloat,
+    meta: jni::sys::jint,
+) {
+    crate::pointer::push(crate::pointer::Pointer {
+        gone,
+        x,
+        y,
+        buttons: u32::try_from(buttons).unwrap_or(0) & 0x1f,
+        wheel: (hscroll, vscroll),
+        meta: u32::try_from(meta).unwrap_or(0),
+    });
+    super::events::wake();
+}
