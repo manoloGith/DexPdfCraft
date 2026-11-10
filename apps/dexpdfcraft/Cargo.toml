@@ -9,7 +9,7 @@ description = "PdfCraft's desktop interface on Android (Samsung DeX, desktop win
 
 [lib]
 name = "dexpdfcraft"
-# cdylib: the library NativeActivity loads; lib: the desktop binary and the tests
+# cdylib: the library the Android activity loads; lib: the desktop binary and the tests
 crate-type = ["cdylib", "lib"]
 
 [[bin]]
@@ -33,7 +33,9 @@ eframe = { version = "0.37", default-features = false, features = ["default_font
 log = "0.4"
 
 [target.'cfg(target_os = "android")'.dependencies]
-# The NativeActivity glue (android-activity) comes through winit.
-winit = { version = "0.30", default-features = false, features = ["android-native-activity"] }
-eframe = { version = "0.37", default-features = false, features = ["android-native-activity"] }
+# The GameActivity glue (android-activity) comes through winit. GameActivity, not NativeActivity:
+# it has IME support (GameTextInput), and eframe's `accesskit`, which pdfcraft-ui-egui turns on,
+# is only available with it. The Java half is androidx.games:games-activity (android/app).
+winit = { version = "0.30", default-features = false, features = ["android-game-activity"] }
+eframe = { version = "0.37", default-features = false, features = ["android-game-activity"] }
 android_logger = { version = "0.15", default-features = false }

@@ -1,5 +1,5 @@
 //! DexPdfCraft: PdfCraft's desktop interface on Android, for Samsung DeX and Android's desktop
-//! windowing. The Android app (`android/`) is a `NativeActivity` that loads this library and
+//! windowing. The Android app (`android/`) is a `GameActivity` that loads this library and
 //! calls [`android_main`]; egui draws the whole window with wgpu (Vulkan or GLES), or with OpenGL
 //! ES through glow when wgpu can't start.
 //!
@@ -48,7 +48,7 @@ mod android {
     use winit::platform::android::activity::AndroidApp;
 
     /// Entry point, called by android-activity on the activity's own thread.
-    #[allow(unsafe_code)] // `no_mangle` is how NativeActivity's glue finds the entry point
+    #[allow(unsafe_code)] // `no_mangle` is how android-activity's glue finds the entry point
     #[unsafe(no_mangle)]
     fn android_main(app: AndroidApp) {
         android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info).with_tag("dexpdfcraft"));

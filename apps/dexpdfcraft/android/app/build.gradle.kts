@@ -94,7 +94,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     packaging {
-        // NativeActivity loads the library by name: keep it uncompressed and page-aligned.
+        // The activity loads the library by name: keep it uncompressed and page-aligned.
         jniLibs { useLegacyPackaging = false }
     }
 }
@@ -122,4 +122,10 @@ androidComponents {
 
 tasks.configureEach {
     if (name.contains("ArtProfile")) enabled = false
+}
+
+dependencies {
+    // GameActivity's Java side. Its prefab C++ glue stays off: android-activity compiles its own.
+    implementation(libs.games.activity)
+    implementation(libs.androidx.appcompat)
 }

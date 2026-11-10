@@ -22,7 +22,7 @@ DexPdfCraft/
 │   ├── src/app.rs             ventana de prueba de la fase 1
 │   ├── src/doc.rs             abrir y renderizar con pdfcraft-render
 │   ├── src/main.rs            la misma ventana en escritorio, para iterar sin dispositivo
-│   └── android/               proyecto Gradle: NativeActivity + manifiesto para DeX
+│   └── android/               proyecto Gradle: GameActivity + manifiesto para DeX
 ├── scripts/sync-upstream.sh   mueve el submódulo y comprueba los [patch] de Cargo
 └── docs/                      plan por fases y notas de cada fase
 ```
@@ -30,7 +30,7 @@ DexPdfCraft/
 - **Motor**: los 31 crates de PdfCraft (`upstream/crates/*`) se usan como dependencias por ruta; no
   hay copia ni fork del motor, así que actualizar es mover el submódulo.
 - **Interfaz**: egui 0.37 y winit (los forks fijados de storytold) con el soporte de Android de
-  `android-activity` (NativeActivity). wgpu dibuja con Vulkan o GLES; si no arranca, glow (OpenGL ES).
+  `android-activity` (GameActivity). wgpu dibuja con Vulkan o GLES; si no arranca, glow (OpenGL ES).
 - **Kotlin**: solo una `MainActivity` mínima. En la fase 3 se encargará de lo que solo Android ofrece
   (Storage Access Framework, «Abrir con», compartir, imprimir, lectura en voz alta) vía JNI.
 
