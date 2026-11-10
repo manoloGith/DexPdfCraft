@@ -60,15 +60,28 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.DEXPDFCRAFT_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.DEXPDFCRAFT_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.DEXPDFCRAFT_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.DEXPDFCRAFT_KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            # Pasted secrets may carry spaces or line breaks: drop them (the generated values have none).
+            store="$RUNNER_TEMP/release.jks"
+            echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > "$store"
+            store_pass="$(printf '%s' "$KEYSTORE_PASSWORD" | tr -d '\r\n')"
+            # A PKCS12 keystore (keytool's default, and DexPdfCraft's) keys with the store's password.
+            key_pass="$store_pass"
+            alias="$(printf '%s' "$KEY_ALIAS" | tr -d '[:space:]')"
+            # An alias the keystore doesn't have: use its only key.
+            if ! keytool -list -keystore "$store" -storepass "$store_pass" -alias "$alias" > /dev/null 2>&1; then
+              found="$(keytool -list -v -keystore "$store" -storepass "$store_pass" 2>/dev/null | sed -n 's/^Alias name: //p' | head -1)"
+              echo "The key alias secret doesn't name a key in the keystore; using its key '${found}'."
+              alias="$found"
+            fi
+            echo "::add-mask::$store_pass"
+            echo "::add-mask::$key_pass"
             {
-              echo "DEXPDFCRAFT_KEYSTORE=$RUNNER_TEMP/release.jks"
-              echo "DEXPDFCRAFT_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
-              echo "DEXPDFCRAFT_KEY_ALIAS=$KEY_ALIAS"
-              echo "DEXPDFCRAFT_KEY_PASSWORD=$KEY_PASSWORD"
+              echo "DEXPDFCRAFT_KEYSTORE=$store"
+              echo "DEXPDFCRAFT_KEYSTORE_PASSWORD=$store_pass"
+              echo "DEXPDFCRAFT_KEY_ALIAS=$alias"
+              echo "DEXPDFCRAFT_KEY_PASSWORD=$key_pass"
             } >> "$GITHUB_ENV"
             echo "signed=true" >> "$GITHUB_OUTPUT"
           else

@@ -24,9 +24,10 @@ instalada. La clave **no está en el repositorio**: el workflow la lee de cuatro
 | `DEXPDFCRAFT_KEYSTORE_BASE64` | el archivo `.jks` en base64 (`base64 -w0 dexpdfcraft-release.jks`) |
 | `DEXPDFCRAFT_KEYSTORE_PASSWORD` | la contraseña del almacén |
 | `DEXPDFCRAFT_KEY_ALIAS` | `dexpdfcraft` |
-| `DEXPDFCRAFT_KEY_PASSWORD` | la contraseña de la clave (la misma) |
+| `DEXPDFCRAFT_KEY_PASSWORD` | la contraseña de la clave (la misma; el workflow usa la del almacén, como en todo almacén PKCS12) |
 
-Sin ellos, el workflow firma con una clave de depuración y publica una *pre-release*, que no se
+El workflow quita espacios y saltos de línea pegados por error, y si el alias no existe en el
+almacén usa su única clave. Sin los secretos, el workflow firma con una clave de depuración y publica una *pre-release*, que no se
 puede actualizar con versiones firmadas con la clave real. Guarda la clave y su contraseña en un
 lugar seguro, con copia: si se pierden, ninguna versión futura podrá actualizar las instaladas.
 
