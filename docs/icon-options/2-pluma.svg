@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- 2 · Página con pluma: leer y editar -->
+  <defs><linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F766E"/><stop offset="1" stop-color="#115E59"/></linearGradient></defs>
+  <rect width="108" height="108" fill="url(#bg2)"/>
+  <path d="M33 25h28l14 14v44H33z" fill="#FFFFFF"/>
+  <path d="M61 25v14h14" fill="#CDEBE7"/>
+  <rect x="40" y="46" width="22" height="3" rx="1.5" fill="#94C9C2"/>
+  <rect x="40" y="53" width="26" height="3" rx="1.5" fill="#94C9C2"/>
+  <rect x="40" y="60" width="16" height="3" rx="1.5" fill="#94C9C2"/>
+  <g transform="rotate(40 72 66)">
+    <rect x="68" y="44" width="8" height="26" rx="2" fill="#F59E0B"/>
+    <path d="M68 70h8l-4 9z" fill="#1F2937"/>
+    <rect x="68" y="44" width="8" height="5" rx="1.5" fill="#FDE68A"/>
+  </g>
+</svg>
