@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DexPdfCraft</string>
-    <string name="save_back_failed">Could not save %1$s to its original location. Use File ▸ Save As to keep the changes.</string>
-    <string name="open_failed">Some documents could not be opened.</string>
-    <string name="crash_title">Last time something went wrong</string>
-    <string name="crash_copy">Copy report</string>
-    <string name="crash_close">Close</string>
-    <string name="report_title">DexPdfCraft diagnostics</string>
-    <string name="diagnostics_label">DexPdfCraft diagnostics</string>
-    <string name="diagnostics_short">Diagnostics</string>
-    <string name="print_failed">Printing could not start.</string>
-    <string name="no_app_for_link">No app can open this link.</string>
 </resources>

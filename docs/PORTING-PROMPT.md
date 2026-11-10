@@ -31,10 +31,10 @@ el dedo y el teclado en pantalla.
 ```
 <App>-Dex/
 ├── upstream/              submódulo: fork <owner>/<app>, rama dexcraft/android (upstream + pocos commits)
-├── vendor/winit/          winit de storytold (rev que fije upstream) + parches Android W-DEX1..3
+├── craft-android/         submódulo: manoloGith/craft-android (capa Android compartida + winit con W-DEX1..3)
 ├── apps/<app>-dex/        crate cdylib (la app Android) + bin de escritorio para iterar
-│   ├── src/               lib.rs, shell.rs, pointer.rs, keyboard.rs, ime.rs, insets.rs, protocol.rs, android/*
-│   └── android/           proyecto Gradle: GameActivity + Kotlin mínimo
+│   ├── src/               lib.rs (Shell de craft-android), android/mod.rs (android_main + backends rfd/arboard)
+│   └── android/           proyecto Gradle: MainActivity : CraftActivity (+ :craft-activity)
 ├── scripts/               fetch-build-inputs.sh, sync-upstream.sh
 ├── fastlane/metadata/     F-Droid / Obtainium
 └── .github/workflows/     android.yml (CI), release.yml (firma + release)
@@ -44,7 +44,7 @@ el dedo y el teclado en pantalla.
    `dexcraft/android`. El submódulo `upstream/` apunta a esa rama. Los cambios al upstream deben
    ser **pocos, genéricos y aislados**, para poder rebasarlos y, si se quiere, proponerlos upstream.
    Para actualizar, rebasa sobre el `main` de storytold (`scripts/sync-upstream.sh`).
-2. **Workspace Cargo propio** con `exclude = ["upstream", "vendor"]`.
+2. **Workspace Cargo propio** con `exclude = ["upstream", "craft-android"]`.
    - Las crates de upstream se usan como dependencias por ruta y heredan su `workspace = true` del
      workspace de upstream.
    - **`[patch.crates-io]` no se hereda**: hay que **copiar los de upstream** al `Cargo.toml` raíz,
@@ -234,29 +234,27 @@ y el diagnóstico. No esperes a que el usuario descubra los fallos.
   enlaces) que la app rellena, con el agradecimiento a la app original y a sus autores. Ver
   `upstream/crates/ui-egui/src/product.rs` del fork de PdfCraft.
 
-## 5. Código que se reutiliza de DexPdfCraft
+## 5. Código que se reutiliza: craft-android
 
-Copia estos archivos de https://github.com/manoloGith/DexPdfCraft y adapta solo lo marcado.
+Todo lo de la sección 4 que no depende de la app está en
+[manoloGith/craft-android](https://github.com/manoloGith/craft-android), que se añade como
+submódulo `craft-android/` (guía: `craft-android/docs/integrate.md`). **No lo copies: úsalo**, y si
+algo falla en una app, arréglalo allí para todas.
 
-| Archivo | Para qué | Qué adaptar |
+| Pieza de craft-android | Para qué | Qué pone la app |
 |---|---|---|
-| `vendor/winit/` (+ `PATCHES.md`, `tests/pointer_patches.rs`) | W-DEX1 (ratón), W-DEX2 (Destroy), W-DEX3 (eventos antes de la ventana) | Comprueba que upstream fija la misma rev de winit (`a517b38…`); si no, aplica los tres parches sobre la suya |
-| `apps/dexpdfcraft/src/pointer.rs`, `keyboard.rs`, `ime.rs`, `insets.rs`, `protocol.rs` | Entrada de Android → egui, con tests | Nada |
-| `apps/dexpdfcraft/src/shell.rs` | Envoltorio `eframe::App`: cierre, autoguardado al perder el foco, cursor, título, URLs, inyección de entrada | El tipo de la app y su método de autoguardado |
-| `apps/dexpdfcraft/src/android/{mod,bridge,events,pickers,clipboard,desktop}.rs` | `android_main`, entorno, JNI, backends de rfd/arboard, eventos | Los nombres JNI (`Java_<paquete>_MainActivity_*`) y los assets a extraer |
-| `apps/dexpdfcraft/src/android/print.rs` | Imprimir con el diálogo de Android | Solo si la app imprime con un spooler enganchable |
-| `android/app/src/main/java/.../MainActivity.kt`, `DocumentStore.kt`, `ClipboardBridge.kt`, `Diag.kt`, `RestartActivity.kt`, `PdfPrintAdapter.kt` | Todo el lado Kotlin | El paquete, los tipos MIME de los intent filters (`.docx`, `.xlsx`, imágenes…) y los textos |
-| `android/app/build.gradle.kts`, `AndroidManifest.xml`, `res/` | cargo-ndk, assets, firma, DeX (`configChanges`, `layout`, meta-data de Samsung), FileProvider, alias de diagnóstico | `applicationId`, nombre de la lib, icono |
-| `upstream/android/{rfd-shim,arboard-shim}` y el diff de `crates/ui-egui/Cargo.toml` | Shims | La ruta de la crate de interfaz de la app |
-| `scripts/fetch-build-inputs.sh`, `sync-upstream.sh` | craft-i18n (rev fijada por upstream), modelos, rebase del fork | Las entradas de esa app (por ejemplo `CRAFT_FONTS_DIR`) |
-| `.github/workflows/android.yml`, `release.yml`, `docs/releasing.md` | CI y releases firmados | Nombres |
-| `fastlane/metadata/android/`, `docs/fdroid.md` | F-Droid / Obtainium | Textos |
+| `winit/` (+ `PATCHES.md`, tests) | W-DEX1 (ratón), W-DEX2 (Destroy), W-DEX3 (eventos antes de la ventana) | `winit = { path = "craft-android/winit" }` en `[patch.crates-io]`; comprobar que upstream fija la rev `a517b38…` |
+| `craft_android::Shell<A>` | Entrada de la actividad (ratón, teclado, IME, insets), Back = cerrar, autoguardado al perder el foco, cursor, título, URLs | `.on_focus_lost(\|a\| a.<autoguardado>())`, `.title(\|a\| …)` |
+| `craft_android::android::{start, native_options, finish, diag}` | Entorno (`HOME`, XDG, `LANG`), pánicos y diagnóstico, guardia de `STARTED`, ejes de la rueda, assets del APK | `Config { log_tag, asset_dirs }` |
+| `android::{pickers, clipboard, print, events}` | SAF, portapapeles, diálogo de impresión, «Abrir con» | Los adaptadores a `rfd::Backend`/`arboard::Backend` (copiar de DexPdfCraft `apps/dexpdfcraft/src/android/mod.rs`) y el evento de apertura de la app |
+| `crates/{rfd,arboard}-android-shim` | Shims con backend instalable | Que la crate de interfaz del fork dependa de ellos en todos los objetivos |
+| `android/craft-activity` (`CraftActivity`, `DocumentStore`, `ClipboardBridge`, `Diag`, `RestartActivity`, `PdfPrintAdapter`) | Todo el lado Kotlin; `RestartActivity` y el `FileProvider` ya van en su manifiesto | `class MainActivity : CraftActivity()` con `nativePrograms()` y `droppableMimeTypes()` |
 
-**Recomendación:** antes de la segunda app, extrae esta capa a un repositorio compartido
-(`craft-android`) con una crate Rust (`pointer`, `keyboard`, `ime`, `insets`, `protocol`, `Shell`
-genérico sobre `eframe::App` + trait de autoguardado, bridge JNI y backends) y una librería Kotlin
-(`CraftActivity : GameActivity` con todo lo de la sección 4). Cada app sería entonces un
-`MainActivity : CraftActivity` y unas decenas de líneas de Rust.
+De DexPdfCraft se copian además (adaptando nombres): `android/app/build.gradle.kts` (cargo-ndk,
+assets, firma), el `AndroidManifest.xml` de la app (`configChanges`, `layout`, meta-data de
+Samsung, intent filters con los tipos MIME de la app, alias de diagnóstico en debug),
+`scripts/fetch-build-inputs.sh` y `sync-upstream.sh`, `.github/workflows/{android,release}.yml`,
+`docs/releasing.md`, `fastlane/metadata/android/` y `docs/fdroid.md`.
 
 ## 6. Qué investigar en cada app nueva antes de escribir código
 

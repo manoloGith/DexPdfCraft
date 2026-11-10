@@ -67,24 +67,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Restarts the app in a fresh process when Android reuses one it has already run in. -->
-        <activity
-            android:name=".RestartActivity"
-            android:exported="false"
-            android:noHistory="true"
-            android:excludeFromRecents="true"
-            android:process=":restart"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
-        <!-- Copied images and files go to the clipboard as content URIs of the app's own files. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.files"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+        <!-- RestartActivity and the clipboard's FileProvider come from craft-activity's manifest. -->
     </application>
 </manifest>

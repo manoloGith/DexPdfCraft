@@ -1,7 +1,8 @@
 # DexPdfCraft: PdfCraft's desktop interface on Android, for Samsung DeX and Android desktop windowing.
 #
 # The PdfCraft engine and its egui interface come unmodified from `upstream/` (a git submodule of
-# storytold/pdfcraft, pinned to one commit). This workspace only adds the Android frontend.
+# storytold/pdfcraft, pinned to one commit). This workspace only adds the Android frontend,
+# on top of the shared Android layer in `craft-android/` (a git submodule of manoloGith/craft-android).
 #
 # Path dependencies into `upstream/` resolve their `workspace = true` keys against upstream's own
 # workspace, but `[patch]` only applies from the root of the build, so the patches below mirror
@@ -9,7 +10,7 @@
 [workspace]
 resolver = "3"
 members = ["apps/dexpdfcraft"]
-exclude = ["upstream", "vendor"]
+exclude = ["upstream", "craft-android"]
 
 [workspace.package]
 version = "0.2.0"
@@ -102,6 +103,6 @@ egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev
 eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
 egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
-# DexPdfCraft: storytold's winit at that revision plus the Android mouse patch (vendor/winit,
-# PATCHES.md W-DEX1); everything else above mirrors upstream.
-winit = { path = "vendor/winit" }
+# DexPdfCraft: storytold's winit at that revision plus craft-android's Android patches
+# (craft-android/winit, PATCHES.md: mouse, lifecycle); everything else above mirrors upstream.
+winit = { path = "craft-android/winit" }

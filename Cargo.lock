@@ -1176,6 +1176,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "craft-android"
+version = "0.1.0"
+dependencies = [
+ "android_logger",
+ "eframe",
+ "egui",
+ "jni",
+ "log",
+ "serde_json",
+ "winit",
+]
+
+[[package]]
 name = "craft-docpath"
 version = "0.1.0"
 source = "git+https://github.com/storytold/craft-libs?rev=787a7a0f972fd1d7a7618fdbeca3a5267a0407ff#787a7a0f972fd1d7a7618fdbeca3a5267a0407ff"
@@ -1537,18 +1550,15 @@ dependencies = [
 name = "dexpdfcraft"
 version = "0.2.0"
 dependencies = [
- "android_logger",
  "arboard-android-shim",
+ "craft-android",
  "eframe",
  "egui",
- "jni",
  "log",
  "pdfcraft-engine",
  "pdfcraft-render",
  "pdfcraft-ui-egui",
  "rfd-android-shim",
- "serde_json",
- "winit",
 ]
 
 [[package]]

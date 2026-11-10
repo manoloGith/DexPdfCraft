@@ -234,7 +234,7 @@ tasks.configureEach {
 }
 
 dependencies {
-    // GameActivity's Java side. Its prefab C++ glue stays off: android-activity compiles its own.
-    implementation(libs.games.activity)
-    implementation(libs.androidx.appcompat)
+    // craft-android's activity (GameActivity, documents, clipboard, printing, input, lifecycle);
+    // it brings GameActivity's Java side and AppCompat.
+    implementation(project(":craft-activity"))
 }

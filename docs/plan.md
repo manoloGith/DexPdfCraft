@@ -26,3 +26,13 @@ submódulo.
 4. **Seguir a upstream**: cambia a diario. `scripts/sync-upstream.sh` rebasa la rama del fork
    sobre el `main` de upstream, comprueba que los `[patch.crates-io]` siguen iguales y vuelve a tomar
    su `Cargo.lock` ([fork.md](fork.md)).
+
+## Capa Android compartida
+
+Desde la versión siguiente a la 0.2.0, la capa Android que no es de PdfCraft (parches de winit, entrada, ciclo de vida,
+documentos SAF, portapapeles, impresión, diagnóstico; Rust y Kotlin) está en el submódulo
+`craft-android/` ([manoloGith/craft-android](https://github.com/manoloGith/craft-android)), para
+reutilizarla en otras apps de storytold. Los documentos de cada fase describen dónde estaba el
+código cuando se escribió (`apps/dexpdfcraft/src/pointer.rs`, `vendor/winit`, `DocumentStore.kt`…):
+ahora vive en craft-android con los mismos nombres.
+

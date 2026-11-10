@@ -23,3 +23,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "DexPdfCraft"
 include(":app")
+// craft-android's Android library (the craft-android submodule at the root of the repository).
+include(":craft-activity")
+project(":craft-activity").projectDir = file("../../../craft-android/android/craft-activity")

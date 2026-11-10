@@ -1,5 +1,3 @@
-# The activity is found the activity by name from the manifest, and the Rust library will call into
-# it through JNI (phase 3): keep the app's classes and their members.
+# The activity is found by name from the manifest. craft-activity's consumer rules keep its own
+# classes (called by JNI) and GameActivity's Java side.
 -keep class io.github.dexpdfcraft.** { *; }
-# GameActivity's Java side is called from android-activity's C glue by name.
--keep class com.google.androidgamesdk.** { *; }

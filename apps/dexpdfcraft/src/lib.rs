@@ -9,12 +9,6 @@
 pub mod app;
 pub mod doc;
 pub mod pdfcraft;
-pub mod ime;
-pub mod insets;
-pub mod keyboard;
-pub mod pointer;
-pub mod protocol;
-pub mod shell;
 
 /// The sample opened on first start (a test document of DexPdfCraft's own).
 pub const SAMPLE_PDF: &[u8] = include_bytes!("../assets/sample.pdf");
@@ -62,7 +56,7 @@ pub fn run(mut options: impl FnMut(eframe::Renderer) -> eframe::NativeOptions, l
             Err(e) => {
                 log::error!("dexpdfcraft: the {renderer} renderer could not start: {e}");
                 #[cfg(target_os = "android")]
-                android::diag(&format!("the {renderer} renderer could not start: {e}"));
+                craft_android::android::diag(&format!("the {renderer} renderer could not start: {e}"));
                 last_error = Some(e);
             }
         }
@@ -77,32 +71,15 @@ fn create(cc: &eframe::CreationContext<'_>, launch: Launch) -> Box<dyn eframe::A
         let pdf = Ok(("sample.pdf".to_owned(), SAMPLE_PDF.to_vec()));
         return Box::new(app::ProbeApp::new(cc, launch.platform, pdf));
     }
-    Box::new(shell::Shell::new(pdfcraft::create(cc, &launch)))
-}
-
-/// The system language as a POSIX locale (`es_ES.UTF-8`), which PdfCraft's Auto language reads
-/// from `LANG` as on Linux. `None` parts give `C.UTF-8` (English).
-pub fn posix_locale(language: Option<&str>, country: Option<&str>) -> String {
-    let clean = |s: &str| s.chars().filter(char::is_ascii_alphabetic).collect::<String>();
-    match (language.map(clean).filter(|l| !l.is_empty()), country.map(clean).filter(|c| !c.is_empty())) {
-        (Some(l), Some(c)) => format!("{}_{}.UTF-8", l.to_ascii_lowercase(), c.to_ascii_uppercase()),
-        (Some(l), None) => format!("{}.UTF-8", l.to_ascii_lowercase()),
-        _ => "C.UTF-8".to_owned(),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::posix_locale;
-
-    #[test]
-    fn the_android_locale_becomes_a_posix_one() {
-        assert_eq!(posix_locale(Some("es"), Some("ES")), "es_ES.UTF-8");
-        assert_eq!(posix_locale(Some("pt"), Some("br")), "pt_BR.UTF-8");
-        assert_eq!(posix_locale(Some("de"), None), "de.UTF-8");
-        assert_eq!(posix_locale(None, Some("US")), "C.UTF-8");
-        assert_eq!(posix_locale(Some("e;s"), Some("")), "es.UTF-8");
-    }
+    // craft-android's shell: the activity's mouse, keyboard and insets, Back as the close button,
+    // autosave when the window loses focus, and the window title for DeX's taskbar.
+    let shell = craft_android::Shell::new(pdfcraft::create(cc, &launch))
+        .on_focus_lost(|app| app.autosave_now())
+        .title(|app| match app.window_title.strip_suffix("PdfCraft") {
+            Some(rest) => format!("{rest}DexPdfCraft"),
+            None => app.window_title.clone(),
+        });
+    Box::new(shell)
 }
 
 #[cfg(target_os = "android")]

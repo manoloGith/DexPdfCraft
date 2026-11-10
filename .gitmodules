@@ -2,3 +2,6 @@
 	path = upstream
 	url = https://github.com/manoloGith/pdfcraft
 	branch = dexpdfcraft/android
+[submodule "craft-android"]
+	path = craft-android
+	url = https://github.com/manoloGith/craft-android

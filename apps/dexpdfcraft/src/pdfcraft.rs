@@ -58,19 +58,22 @@ pub fn create(cc: &eframe::CreationContext<'_>, launch: &Launch) -> PdfCraftApp 
             let line = format!("renderer wgpu, {} ({:?}, {:?})", adapter.name, adapter.device_type, adapter.backend);
             log::info!("dexpdfcraft: {line}");
             #[cfg(target_os = "android")]
-            crate::android::diag(&line);
+            craft_android::android::diag(&line);
         }
         None => {
             log::info!("dexpdfcraft: renderer OpenGL ES (glow)");
             #[cfg(target_os = "android")]
-            crate::android::diag("renderer OpenGL ES (glow)");
+            craft_android::android::diag("renderer OpenGL ES (glow)");
         }
     }
     // "Open with" and "Share" from other apps arrive as the desktop's OS events do.
     #[cfg(target_os = "android")]
     {
-        crate::android::events::set_context(cc.egui_ctx.clone());
-        app.os_events = Some(Box::new(crate::android::events::poll));
+        craft_android::android::events::set_context(cc.egui_ctx.clone());
+        app.os_events = Some(Box::new(|| {
+            let paths = craft_android::android::events::opened();
+            if paths.is_empty() { Vec::new() } else { vec![pdfcraft_ui_egui::OsEvent::Open(paths)] }
+        }));
         // Print jobs go to Android's print dialog; the spool files live in the cache.
         let cache = std::env::var_os("XDG_CACHE_HOME").map_or_else(std::env::temp_dir, std::path::PathBuf::from);
         crate::android::print::install(&mut app, cache.join("print"));

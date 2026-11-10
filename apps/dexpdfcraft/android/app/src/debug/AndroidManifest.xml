@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Debug builds only: a second launcher icon that opens the diagnostics report (Diag.kt), for
+<!-- Debug builds only: a second launcher icon that opens the diagnostics report (craft-android's Diag.kt), for
      testers without adb. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity-alias
             android:name="io.github.dexpdfcraft.Diagnostics"
             android:exported="true"
-            android:label="@string/diagnostics_label"
+            android:label="@string/app_diagnostics_label"
             android:icon="@mipmap/ic_launcher"
             android:targetActivity="io.github.dexpdfcraft.MainActivity">
             <intent-filter>

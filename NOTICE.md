@@ -7,6 +7,11 @@ incluidos como submódulo en `upstream/` desde el fork
 `docs/fork.md`). Los avisos y licencias de terceros de PdfCraft están en
 `upstream/NOTICE`, `upstream/ATTRIBUTION.md` y `upstream/licenses/`, y se aplican también aquí.
 
+La capa Android (entrada, ciclo de vida, documentos, portapapeles, impresión y winit con sus
+parches) viene del submódulo `craft-android/`
+([manoloGith/craft-android](https://github.com/manoloGith/craft-android), MIT o Apache-2.0; su
+`winit/` conserva la licencia Apache-2.0 de winit).
+
 El proceso de compilación con Gradle y cargo-ndk se basa en el de
 [PdfCraft for Android](https://github.com/artcraft-android/pdfcraft-android) (MIT o Apache-2.0).
 
