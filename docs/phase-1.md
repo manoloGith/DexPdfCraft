@@ -57,7 +57,7 @@ eframe solo admite `accesskit` con el backend `android-game-activity`, y `pdfcra
 
 `cargo ndk -t arm64-v8a check -p pdfcraft-ui-egui` en el workspace de upstream:
 
-- **El motor completo compila para Android**, incluidos `engine`, `render`, `sign`, `ocr` y `automation`.
+- **Todas las crates del motor de las que depende la interfaz compilan para Android** (`engine`, `render`, `sign`, `ocr`, `forms`, `js`…).
 - Fallan solo tres dependencias de terceros, todas previstas en el plan:
   - `rfd` (diálogos de archivo y de mensaje): no tiene backend Android. Se sustituye por SAF a través de
     Kotlin (fase 3) y se aísla con `cfg(not(target_os = "android"))` (unos 53 usos de `rfd::` en `ui-egui`).
