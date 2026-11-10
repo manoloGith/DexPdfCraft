@@ -9,6 +9,7 @@
 pub mod app;
 pub mod doc;
 pub mod pdfcraft;
+pub mod keyboard;
 pub mod pointer;
 pub mod protocol;
 pub mod shell;

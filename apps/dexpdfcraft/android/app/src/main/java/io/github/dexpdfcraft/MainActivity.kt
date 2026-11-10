@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Process
 import android.util.Log
 import android.view.InputDevice
+import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.Toast
@@ -164,7 +165,7 @@ class MainActivity : GameActivity() {
         }.onFailure { Diag.log("diagnostics shortcut: $it") }
     }
 
-    /** Ctrl+Shift+D shows the diagnostics report. */
+    /** Ctrl+Shift+D shows the diagnostics report; physical keyboards go to the library. */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_D &&
             event.isCtrlPressed && event.isShiftPressed
@@ -172,7 +173,65 @@ class MainActivity : GameActivity() {
             showReport(onlyIfSomethingWentWrong = false)
             return true
         }
+        if (isHardwareKey(event) && onKey(event)) return true
         return super.dispatchKeyEvent(event)
+    }
+
+    // --- Keyboard ------------------------------------------------------------------------------
+
+    /** A dead key (´ ` ^ ¨ ~) waiting for the next key, as its combining accent. */
+    private var pendingAccent = 0
+    private var keysLogged = 0
+
+    /** A key of a physical keyboard (not the on-screen one, not Back, volume or power). */
+    private fun isHardwareKey(e: KeyEvent): Boolean {
+        val device = e.device ?: return false
+        if (device.isVirtual || !e.isFromSource(InputDevice.SOURCE_KEYBOARD)) return false
+        return when (e.keyCode) {
+            KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN,
+            KeyEvent.KEYCODE_VOLUME_MUTE, KeyEvent.KEYCODE_POWER, KeyEvent.KEYCODE_HOME,
+            KeyEvent.KEYCODE_APP_SWITCH, KeyEvent.KEYCODE_MENU -> false
+            else -> true
+        }
+    }
+
+    /**
+     * Hand a hardware key to the library: winit gets no character for letters, digits and symbols
+     * on Android, so typing and shortcuts like Ctrl+O did nothing. Android's KeyEvent knows the
+     * layout: the character with Shift and AltGr, and dead keys (´ then a gives á).
+     */
+    @Suppress("DEPRECATION") // ACTION_MULTIPLE: still sent by some input devices
+    private fun onKey(e: KeyEvent): Boolean {
+        val pressed = when (e.action) {
+            KeyEvent.ACTION_DOWN -> true
+            KeyEvent.ACTION_UP -> false
+            KeyEvent.ACTION_MULTIPLE -> {
+                // Several characters at once (some input devices): type them.
+                e.characters?.let { nativeKey(KeyEvent.KEYCODE_UNKNOWN, 0, it, true, false, e.metaState) }
+                return true
+            }
+            else -> return false
+        }
+        var text = ""
+        if (pressed) {
+            val c = e.getUnicodeChar(e.metaState)
+            when {
+                c and KeyCharacterMap.COMBINING_ACCENT != 0 -> pendingAccent = c and KeyCharacterMap.COMBINING_ACCENT_MASK
+                c != 0 && pendingAccent != 0 -> {
+                    val combined = KeyCharacterMap.getDeadChar(pendingAccent, c)
+                    text = if (combined != 0) String(Character.toChars(combined)) else String(Character.toChars(pendingAccent)) + String(Character.toChars(c))
+                    pendingAccent = 0
+                }
+                c != 0 -> text = String(Character.toChars(c))
+            }
+        }
+        val base = e.getUnicodeChar(0).let { if (it and KeyCharacterMap.COMBINING_ACCENT != 0) 0 else it }
+        if (keysLogged < KEY_LOG_LIMIT && pressed) {
+            keysLogged++
+            Diag.log("key code=${e.keyCode} base=$base meta=0x${Integer.toHexString(e.metaState)} typed=${if (text.isEmpty()) "-" else "yes"}")
+        }
+        nativeKey(e.keyCode, base, text, pressed, e.repeatCount > 0, e.metaState)
+        return true
     }
 
     private fun restartInFreshProcess() {
@@ -370,6 +429,9 @@ class MainActivity : GameActivity() {
     /** An event for the library: `picked` `{id, paths}`, `open` `{paths}` or `close` `{}`. */
     private external fun nativeEvent(op: String, json: String)
 
+    /** One key of a hardware keyboard (see `keyboard.rs`). */
+    private external fun nativeKey(keycode: Int, base: Int, text: String, pressed: Boolean, repeat: Boolean, meta: Int)
+
     /** One mouse event, in the surface's pixels (see `pointer.rs`). */
     private external fun nativePointer(gone: Boolean, x: Float, y: Float, buttons: Int, hscroll: Float, vscroll: Float, meta: Int)
 
@@ -378,6 +440,8 @@ class MainActivity : GameActivity() {
         private const val REQUEST_BASE = 0x4000
         private const val CRASH_FILE = "crash.txt"
         private const val MOUSE_LOG_LIMIT = 60
+        /** Keys logged per session: codes only, never what is typed. */
+        private const val KEY_LOG_LIMIT = 20
         const val ACTION_DIAGNOSTICS = "io.github.dexpdfcraft.DIAGNOSTICS"
 
         /** This process has created a MainActivity (and so started the library) before. */

@@ -89,6 +89,16 @@ En DeX la rueda funcionaba, pero ninguno de los dos botones; en el móvil con el
   hubo un error, el siguiente arranque muestra el informe con un botón «Copiar informe». La build de
   depuración añade un segundo icono, «Diagnóstico DexPdfCraft», para verlo cuando se quiera.
 
+### Cuarta ronda (con el informe de diagnóstico del dispositivo)
+
+El informe mostró dos cosas: el ratón ya funcionaba, y los arranques fallidos terminaban el bucle de
+eventos en el mismo milisegundo en que DeX cambiaba el tamaño de la ventana, antes de que existiera.
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| A veces, al volver a abrirla, la app se cierra sola | Android avisa del cambio de tamaño (DeX amplía la ventana al abrirla) antes de crear la ventana nativa. winit lo envía como `ScaleFactorChanged` y eframe, que aún no tiene ventana, lo toma como el final del programa (`EventResult::Exit`) | W-DEX3 en `vendor/winit`: no se envía ningún evento de ventana antes del primer `Resumed`. Lo protege el test `android_window_events_wait_for_the_window` |
+| Del teclado solo funcionan las teclas de función, las flechas y Re Pág/Av Pág | winit en Android traduce por tabla las teclas que conoce, pero no obtiene el carácter de letras, números y símbolos | `MainActivity` lee los teclados físicos (`KeyEvent`: carácter según la distribución, con Mayús, AltGr y teclas muertas como ´ + a = á) y los pasa con `nativeKey` a `src/keyboard.rs`. Ahí se convierten en eventos de egui: tecla lógica según la distribución, tecla física por posición, texto y `ModifiersChanged`. Tests en `keyboard.rs`. El teclado en pantalla sigue yendo por GameActivity |
+
 ## Pendiente
 
 - **Imprimir** con `PrintManager` y **compartir** desde PdfCraft. La app de escritorio imprime con

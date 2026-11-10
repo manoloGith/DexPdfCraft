@@ -101,3 +101,15 @@ fn android_destroy_ends_the_event_loop() {
     let destroy = section(&android, "MainEvent::Destroy => {", "},");
     assert!(destroy.contains("self.window_target.p.exit()"), "Destroy must end the event loop");
 }
+
+#[test]
+fn android_window_events_wait_for_the_window() {
+    // DexPdfCraft (W-DEX3): Android reported a configuration change (DeX resizing the window as
+    // it opens) as ScaleFactorChanged before the native window existed; eframe treats a window
+    // event before its window as the end of the program, so the app closed as it opened.
+    let android = source("android/mod.rs");
+    let iteration = section(&android, "fn single_iteration<F>", "let cause = self.cause;");
+    assert!(iteration.contains("!WINDOW_CREATED.load(Ordering::Relaxed)"), "window events must wait for the window");
+    let init = section(&android, "MainEvent::InitWindow { .. } => {", "},");
+    assert!(init.contains("WINDOW_CREATED.store(true"), "InitWindow must mark the window as created");
+}

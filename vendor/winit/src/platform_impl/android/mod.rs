@@ -36,6 +36,9 @@ pub(crate) use crate::icon::NoIcon as PlatformIcon;
 
 static HAS_FOCUS: AtomicBool = AtomicBool::new(true);
 
+/// DexPdfCraft (W-DEX3): the native window has existed (the first `Resumed` was sent).
+static WINDOW_CREATED: AtomicBool = AtomicBool::new(false);
+
 /// DexPdfCraft (W-DEX1): Android's mouse button-state bits and the winit buttons they are.
 const MOUSE_BUTTONS: [(u32, event::MouseButton); 5] = [
     (1, event::MouseButton::Left),    // BUTTON_PRIMARY
@@ -236,6 +239,20 @@ impl<T: 'static> EventLoop<T> {
     {
         trace!("Mainloop iteration");
 
+        // DexPdfCraft (W-DEX3): no window events before the first `Resumed`. Android reports
+        // configuration changes, focus and input before the native window exists (Samsung DeX
+        // resizes the window as it opens), and an application that creates its window on
+        // `Resumed` (eframe) treats a window event without one as the end of the program.
+        let callback = &mut |event: event::Event<T>, target: &RootAEL| {
+            if matches!(event, event::Event::WindowEvent { .. })
+                && !WINDOW_CREATED.load(Ordering::Relaxed)
+            {
+                trace!("Window event before the window exists (dropped)");
+                return;
+            }
+            callback(event, target)
+        };
+
         let cause = self.cause;
         let mut pending_redraw = self.pending_redraw;
         let mut resized = false;
@@ -247,6 +264,7 @@ impl<T: 'static> EventLoop<T> {
 
             match event {
                 MainEvent::InitWindow { .. } => {
+                    WINDOW_CREATED.store(true, Ordering::Relaxed);
                     callback(event::Event::Resumed, self.window_target());
                 },
                 MainEvent::TerminateWindow { .. } => {

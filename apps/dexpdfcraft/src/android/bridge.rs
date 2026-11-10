@@ -119,3 +119,34 @@ pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativePointer<'ca
     });
     super::events::wake();
 }
+
+/// `MainActivity.nativeKey(...)`: one key of a hardware keyboard (see crate::keyboard).
+#[allow(unsafe_code)] // `no_mangle`: the JVM finds native methods by their exported name
+#[unsafe(no_mangle)]
+#[allow(clippy::too_many_arguments)] // the JNI signature
+pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativeKey<'caller>(
+    mut unowned: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    keycode: jni::sys::jint,
+    base: jni::sys::jint,
+    text: JString<'caller>,
+    pressed: jni::sys::jboolean,
+    repeat: jni::sys::jboolean,
+    meta: jni::sys::jint,
+) {
+    unowned
+        .with_env(|env| -> jni::errors::Result<()> {
+            let text = if text.is_null() { String::new() } else { text.try_to_string(env)? };
+            crate::keyboard::push(crate::keyboard::KeyPress {
+                keycode,
+                base: u32::try_from(base).unwrap_or(0),
+                text,
+                pressed,
+                repeat,
+                meta: u32::try_from(meta).unwrap_or(0),
+            });
+            super::events::wake();
+            Ok(())
+        })
+        .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
+}
