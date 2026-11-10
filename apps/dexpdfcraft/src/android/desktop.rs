@@ -18,8 +18,10 @@ pub fn set_cursor(icon: egui::CursorIcon) {
     }
 }
 
-/// The window's title (PdfCraft names the document in front).
+/// The window's title (PdfCraft names the document in front), under DexPdfCraft's name.
 pub fn set_title(title: &str) {
+    let renamed = title.strip_suffix("PdfCraft").map(|rest| format!("{rest}DexPdfCraft"));
+    let title = renamed.as_deref().unwrap_or(title);
     let mut last = TITLE.lock().unwrap_or_else(PoisonError::into_inner);
     if last.as_deref() != Some(title) && super::bridge::available() {
         *last = Some(title.to_owned());

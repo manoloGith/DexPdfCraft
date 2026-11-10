@@ -9,7 +9,38 @@ use crate::Launch;
 /// eframe storage key, as on the desktop.
 const STORAGE_KEY: &str = "pdfcraft";
 
+/// DexPdfCraft as About presents it, with thanks to PdfCraft (PdfCraft's own details follow).
+fn product() -> pdfcraft_ui_egui::product::Product {
+    pdfcraft_ui_egui::product::Product {
+        name: "DexPdfCraft",
+        version: env!("CARGO_PKG_VERSION"),
+        about: vec![
+            (
+                "en",
+                vec![
+                    "PdfCraft's desktop interface on Android: for Samsung DeX and desktop windows, and on phones and tablets too.".to_owned(),
+                    "Thank you to PdfCraft and its authors, the ArtCraft Team and the PdfCraft contributors, for an open-source PDF application written in Rust that made this possible. DexPdfCraft uses their engine and interface; anything that goes wrong in the Android version is DexPdfCraft's to fix, not theirs.".to_owned(),
+                    "MIT OR Apache-2.0, like PdfCraft.".to_owned(),
+                ],
+            ),
+            (
+                "es",
+                vec![
+                    "La interfaz de escritorio de PdfCraft en Android: para Samsung DeX y ventanas de escritorio, y también en móviles y tabletas.".to_owned(),
+                    "Gracias a PdfCraft y a sus autores, el equipo de ArtCraft y los colaboradores de PdfCraft, por una aplicación de PDF de código abierto escrita en Rust que ha hecho esto posible. DexPdfCraft usa su motor y su interfaz; lo que falle en la versión para Android es cosa de DexPdfCraft, no suya.".to_owned(),
+                    "MIT OR Apache-2.0, como PdfCraft.".to_owned(),
+                ],
+            ),
+        ],
+        links: vec![
+            ("DexPdfCraft — github.com/manoloGith/DexPdfCraft".to_owned(), "https://github.com/manoloGith/DexPdfCraft".to_owned()),
+            ("PdfCraft — github.com/storytold/pdfcraft".to_owned(), "https://github.com/storytold/pdfcraft".to_owned()),
+        ],
+    }
+}
+
 pub fn create(cc: &eframe::CreationContext<'_>, launch: &Launch) -> PdfCraftApp {
+    pdfcraft_ui_egui::product::set(product());
     let mut app = PdfCraftApp::new();
     app.units = pdfcraft_ui_egui::units::Unit::system();
     if let Some(json) = cc.storage.and_then(|s| s.get_string(STORAGE_KEY)) {

@@ -133,6 +133,21 @@ android {
         ndk { abiFilters.addAll(rustAbis) }
     }
 
+    // The release key, when the build is given one (the release workflow passes it from the
+    // repository's secrets). Without one a release build is signed with the debug key: it installs,
+    // but a later release signed with the real key can't update it.
+    val releaseKeystore: String? = providers.environmentVariable("DEXPDFCRAFT_KEYSTORE").orNull?.takeIf { it.isNotBlank() }
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = providers.environmentVariable("DEXPDFCRAFT_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("DEXPDFCRAFT_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("DEXPDFCRAFT_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -140,8 +155,7 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Until a release key is configured, a release build is signed with the debug key.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             vcsInfo { include = false }
         }
     }

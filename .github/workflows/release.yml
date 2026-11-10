@@ -1,0 +1,94 @@
+name: Release
+
+# Push a tag like v0.1.0 to build the release APK and publish it as a GitHub release.
+# With the repository secrets DEXPDFCRAFT_KEYSTORE_BASE64, DEXPDFCRAFT_KEYSTORE_PASSWORD,
+# DEXPDFCRAFT_KEY_ALIAS and DEXPDFCRAFT_KEY_PASSWORD the APK is signed with the release key;
+# without them it is signed with a debug key and published as a pre-release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Version from the tag
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          grep -q "^dexpdfcraft.version=${version}$" apps/dexpdfcraft/android/gradle.properties || {
+            echo "gradle.properties' dexpdfcraft.version is not ${version}"; exit 1; }
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Interface translations and OCR models
+        run: |
+          scripts/fetch-build-inputs.sh | sed 's/^export //; s/"//g' >> "$GITHUB_ENV"
+          echo "CRAFT_I18N_REQUIRED=1" >> "$GITHUB_ENV"
+
+      - name: Rust (rust-toolchain.toml) and cargo-ndk
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          cargo install cargo-ndk --version 4.1.2 --locked
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "platforms;android-36 build-tools;36.0.0 ndk;29.0.14206865"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release
+
+      - name: Release key
+        id: key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.DEXPDFCRAFT_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.DEXPDFCRAFT_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.DEXPDFCRAFT_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.DEXPDFCRAFT_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "DEXPDFCRAFT_KEYSTORE=$RUNNER_TEMP/release.jks"
+              echo "DEXPDFCRAFT_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "DEXPDFCRAFT_KEY_ALIAS=$KEY_ALIAS"
+              echo "DEXPDFCRAFT_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No release key in the repository's secrets: signing with a debug key (pre-release)."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: APK (arm64-v8a)
+        working-directory: apps/dexpdfcraft/android
+        run: |
+          ./gradlew --no-daemon assembleRelease -Pdexpdfcraft.abis=arm64-v8a \
+            -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease
+          mkdir -p "$RUNNER_TEMP/out"
+          cp app/build/outputs/apk/release/app-release.apk \
+            "$RUNNER_TEMP/out/DexPdfCraft-${{ steps.version.outputs.version }}-arm64-v8a.apk"
+          (cd "$RUNNER_TEMP/out" && sha256sum *.apk > SHA256SUMS.txt)
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: DexPdfCraft ${{ steps.version.outputs.version }}
+          prerelease: ${{ steps.key.outputs.signed != 'true' }}
+          body_path: docs/release-notes/${{ steps.version.outputs.tag }}.md
+          files: |
+            ${{ runner.temp }}/out/*.apk
+            ${{ runner.temp }}/out/SHA256SUMS.txt
