@@ -155,7 +155,13 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // -Pdexpdfcraft.unsigned=true (F-Droid's build): not signed at all, so the store signs it,
+            // or checks it against the published APK.
+            signingConfig = if (providers.gradleProperty("dexpdfcraft.unsigned").orNull == "true") {
+                null
+            } else {
+                signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            }
             vcsInfo { include = false }
         }
     }

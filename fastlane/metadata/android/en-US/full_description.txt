@@ -1,0 +1,12 @@
+<p><b>DexPdfCraft</b> brings the desktop interface of <a href="https://github.com/storytold/pdfcraft">PdfCraft</a>, an open-source PDF reader and editor written in Rust, to Android. It is made for <b>Samsung DeX</b> and Android's desktop windows, with a mouse and a keyboard, and works on tablets and phones too.</p>
+<p><b>Every PdfCraft tool</b>, laid out as on the desktop:</p>
+<ul>
+<li>Read with tabs, split view, thumbnails, bookmarks, layers and attachments</li>
+<li>Comment, highlight, draw, stamp and measure</li>
+<li>Fill and sign forms (with their JavaScript) and digital signatures</li>
+<li>Edit text and images; organize, combine, split and crop pages</li>
+<li>Redact, protect with a password, optimize, compare and export</li>
+<li>Recognize text (OCR, English) and print with Android's print service</li>
+</ul>
+<p><b>Made for Android:</b> open and save with the system file picker (changes go back to the original document), Open with and Share, drag and drop in DeX, a mouse with buttons, wheel and cursors, a hardware keyboard with its layout and shortcuts, and the on-screen keyboard on phones.</p>
+<p>No account, no ads, no telemetry. MIT or Apache-2.0. Thanks to PdfCraft and its authors, whose engine and interface this app is built on.</p>

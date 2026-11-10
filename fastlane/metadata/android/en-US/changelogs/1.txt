@@ -1,0 +1,1 @@
+First release: PdfCraft 0.18.1's full interface on Android, with the system file picker, DeX mouse and keyboard, printing, OCR (English) and the on-screen keyboard.

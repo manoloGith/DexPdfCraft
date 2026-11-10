@@ -1,0 +1,1 @@
+La interfaz de escritorio de PdfCraft en Android, para DeX, tabletas y móviles

@@ -39,6 +39,44 @@ debug = "line-tables-only"
 lto = "thin"
 codegen-units = 1
 
+# Phase 7: dependencies are optimized for size, except those that draw, decode and recognize
+# pages, which stay optimized for speed (the APK's native library is most of its download).
+[profile.release.package."*"]
+opt-level = "s"
+
+[profile.release.package.hayro]
+opt-level = 3
+[profile.release.package.hayro-interpret]
+opt-level = 3
+[profile.release.package.hayro-syntax]
+opt-level = 3
+[profile.release.package.hayro-jbig2]
+opt-level = 3
+[profile.release.package.hayro-ccitt]
+opt-level = 3
+[profile.release.package.vello_cpu]
+opt-level = 3
+[profile.release.package.vello_common]
+opt-level = 3
+[profile.release.package.pdfcraft-render]
+opt-level = 3
+[profile.release.package.pdfcraft-filters]
+opt-level = 3
+[profile.release.package.zlib-rs]
+opt-level = 3
+[profile.release.package.zune-jpeg]
+opt-level = 3
+[profile.release.package.rten]
+opt-level = 3
+[profile.release.package.rten-vecmath]
+opt-level = 3
+[profile.release.package.rten-simd]
+opt-level = 3
+[profile.release.package.ocrs]
+opt-level = 3
+[profile.release.package.epaint]
+opt-level = 3
+
 # --- mirrored from upstream/Cargo.toml (`[patch.crates-io]`) ---
 [patch.crates-io]
 hayro-interpret = { path = "upstream/vendor/hayro-interpret" }

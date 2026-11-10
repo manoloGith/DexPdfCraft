@@ -1,0 +1,1 @@
+Primera versión: la interfaz completa de PdfCraft 0.18.1 en Android, con selector de archivos, ratón y teclado de DeX, impresión, OCR (inglés) y teclado en pantalla.
