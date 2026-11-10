@@ -8,4 +8,5 @@
     <string name="crash_close">Close</string>
     <string name="report_title">DexPdfCraft diagnostics</string>
     <string name="diagnostics_label">DexPdfCraft diagnostics</string>
+    <string name="diagnostics_short">Diagnostics</string>
 </resources>

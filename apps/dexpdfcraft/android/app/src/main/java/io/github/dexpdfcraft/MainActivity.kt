@@ -4,12 +4,16 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.content.res.Configuration
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
 import android.view.InputDevice
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -57,6 +61,7 @@ class MainActivity : GameActivity() {
             return
         }
         takeMouseInput()
+        offerDiagnosticsShortcut()
         current = this
         documents = DocumentStore(applicationContext).also { it.start() }
         clipboard = ClipboardBridge(applicationContext)
@@ -143,7 +148,32 @@ class MainActivity : GameActivity() {
         super.onWindowFocusChanged(hasFocus)
     }
 
-    private fun isDiagnosticsLaunch(i: Intent?) = i?.component?.className?.endsWith(".Diagnostics") == true
+    private fun isDiagnosticsLaunch(i: Intent?) =
+        i?.action == ACTION_DIAGNOSTICS || i?.component?.className?.endsWith(".Diagnostics") == true
+
+    /** "Diagnostics" in the menu of the app's icon (long press, or right click in DeX). */
+    private fun offerDiagnosticsShortcut() {
+        runCatching {
+            val shortcut = ShortcutInfo.Builder(this, "diagnostics")
+                .setShortLabel(getString(R.string.diagnostics_short))
+                .setLongLabel(getString(R.string.diagnostics_label))
+                .setIcon(Icon.createWithResource(this, R.mipmap.ic_launcher))
+                .setIntent(Intent(this, MainActivity::class.java).setAction(ACTION_DIAGNOSTICS))
+                .build()
+            getSystemService(ShortcutManager::class.java)?.dynamicShortcuts = listOf(shortcut)
+        }.onFailure { Diag.log("diagnostics shortcut: $it") }
+    }
+
+    /** Ctrl+Shift+D shows the diagnostics report. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_D &&
+            event.isCtrlPressed && event.isShiftPressed
+        ) {
+            showReport(onlyIfSomethingWentWrong = false)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
 
     private fun restartInFreshProcess() {
         startActivity(
@@ -348,6 +378,7 @@ class MainActivity : GameActivity() {
         private const val REQUEST_BASE = 0x4000
         private const val CRASH_FILE = "crash.txt"
         private const val MOUSE_LOG_LIMIT = 60
+        const val ACTION_DIAGNOSTICS = "io.github.dexpdfcraft.DIAGNOSTICS"
 
         /** This process has created a MainActivity (and so started the library) before. */
         @Volatile private var processUsed = false

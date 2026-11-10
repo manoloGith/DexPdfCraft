@@ -7,4 +7,5 @@
     <string name="crash_close">Cerrar</string>
     <string name="report_title">Diagnóstico de DexPdfCraft</string>
     <string name="diagnostics_label">Diagnóstico DexPdfCraft</string>
+    <string name="diagnostics_short">Diagnóstico</string>
 </resources>
