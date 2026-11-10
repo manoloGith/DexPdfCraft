@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DexPdfCraft</string>
+    <string name="save_back_failed">Could not save %1$s to its original location. Use File ▸ Save As to keep the changes.</string>
+    <string name="open_failed">Some documents could not be opened.</string>
 </resources>

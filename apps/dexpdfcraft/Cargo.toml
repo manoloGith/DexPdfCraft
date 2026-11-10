@@ -35,6 +35,7 @@ egui = { version = "0.37", features = ["default_fonts"] }
 # wgpu draws; OpenGL ES (glow) is the fallback, as on the desktop app.
 eframe = { version = "0.37", default-features = false, features = ["default_fonts", "wgpu", "glow", "accesskit", "persistence"] }
 log = "0.4"
+serde_json = "1"
 
 [target.'cfg(target_os = "android")'.dependencies]
 # The GameActivity glue (android-activity) comes through winit. GameActivity, not NativeActivity:
@@ -43,3 +44,9 @@ log = "0.4"
 winit = { version = "0.30", default-features = false, features = ["android-game-activity"] }
 eframe = { version = "0.37", default-features = false, features = ["android-game-activity"] }
 android_logger = { version = "0.15", default-features = false }
+# JNI to MainActivity (pickers, clipboard, "Open with"); the release android-activity uses, so
+# its JavaVM singleton is the one this crate sees.
+jni = "0.22.4"
+# The fork's shims under PdfCraft's names: this crate installs their Android backends.
+rfd = { package = "rfd-android-shim", path = "../../upstream/android/rfd-shim" }
+arboard = { package = "arboard-android-shim", path = "../../upstream/android/arboard-shim" }

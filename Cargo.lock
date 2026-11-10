@@ -1538,12 +1538,16 @@ name = "dexpdfcraft"
 version = "0.1.0"
 dependencies = [
  "android_logger",
+ "arboard-android-shim",
  "eframe",
  "egui",
+ "jni",
  "log",
  "pdfcraft-engine",
  "pdfcraft-render",
  "pdfcraft-ui-egui",
+ "rfd-android-shim",
+ "serde_json",
  "winit",
 ]
 

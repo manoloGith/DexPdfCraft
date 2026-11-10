@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="save_back_failed">No se pudo guardar %1$s en su ubicación original. Usa Archivo ▸ Guardar como para conservar los cambios.</string>
+    <string name="open_failed">No se pudieron abrir algunos documentos.</string>
+</resources>

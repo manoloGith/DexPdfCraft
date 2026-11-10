@@ -6,6 +6,7 @@ fn main() {
     let launch = dexpdfcraft::Launch {
         platform: dexpdfcraft::app::Platform { os: std::env::consts::OS, source: "command line".into() },
         sample: files.is_empty(),
+        sample_marker: None,
         files,
         persistence_path: None,
     };
