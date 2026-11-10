@@ -1,5 +1,6 @@
 package io.github.dexpdfcraft
 
+import android.app.ActivityManager
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -12,7 +13,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
+import android.view.DragEvent
 import android.view.InputDevice
+import android.view.PointerIcon
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -49,7 +52,7 @@ class MainActivity : GameActivity() {
         Diag.init(filesDir)
         Diag.sessionStart(
             "pid=${Process.myPid()} reused=$reused restored=${savedInstanceState != null} " +
-                "multiWindow=$isInMultiWindowMode ${describe(resources.configuration)} " +
+                "multiWindow=$isInMultiWindowMode dex=${isDexMode(resources.configuration)} ${describe(resources.configuration)} " +
                 "android=${android.os.Build.VERSION.SDK_INT} device=${android.os.Build.MODEL}",
         )
         recordJavaCrashes()
@@ -62,6 +65,7 @@ class MainActivity : GameActivity() {
             return
         }
         takeMouseInput()
+        acceptDrops()
         offerDiagnosticsShortcut()
         current = this
         documents = DocumentStore(applicationContext).also { it.start() }
@@ -128,6 +132,57 @@ class MainActivity : GameActivity() {
         return true
     }
 
+    // --- Desktop window --------------------------------------------------------------------------
+
+    /** The mouse cursor PdfCraft asks for (an Android `PointerIcon` type; see `pointer.rs`). */
+    private fun setCursor(type: Int) = runOnUiThread {
+        mSurfaceView?.pointerIcon = PointerIcon.getSystemIcon(this, type)
+    }
+
+    /** PdfCraft's window title (the document in front): the task's label in DeX's taskbar. */
+    private fun setWindowTitle(title: String) = runOnUiThread {
+        this.title = title
+        @Suppress("DEPRECATION") // TaskDescription.Builder is API 33; this works on every version
+        setTaskDescription(ActivityManager.TaskDescription(title))
+    }
+
+    /**
+     * PDFs dragged onto the window (from My Files in DeX, another app in split screen) open in
+     * tabs, as files dropped on the desktop app do.
+     */
+    private fun acceptDrops() {
+        val surface = mSurfaceView ?: return
+        surface.setOnDragListener { _, event ->
+            when (event.action) {
+                DragEvent.ACTION_DRAG_STARTED -> event.clipDescription?.let { d ->
+                    (0 until d.mimeTypeCount).any { d.getMimeType(it) == "application/pdf" || d.getMimeType(it) == "*/*" } ||
+                        d.hasMimeType("application/octet-stream")
+                } ?: false
+                DragEvent.ACTION_DROP -> {
+                    val permissions = requestDragAndDropPermissions(event)
+                    val clip = event.clipData
+                    val uris = if (clip == null) emptyList() else (0 until clip.itemCount).mapNotNull { clip.getItemAt(it).uri }
+                    Diag.log("drop: ${uris.size} item(s)")
+                    io.execute {
+                        val paths = uris.mapNotNull { documents.open(it, writable = false) }
+                        permissions?.release()
+                        if (paths.size < uris.size) toast(getString(R.string.open_failed))
+                        if (paths.isNotEmpty()) nativeEvent("open", JSONObject().put("paths", JSONArray(paths)).toString())
+                    }
+                    true
+                }
+                else -> true
+            }
+        }
+    }
+
+    /** Samsung DeX (desktop mode), read from One UI's configuration field; false elsewhere. */
+    private fun isDexMode(c: Configuration): Boolean = runCatching {
+        val cls = c.javaClass
+        val enabled = cls.getField("SEM_DESKTOP_MODE_ENABLED").getInt(cls)
+        cls.getField("semDesktopModeEnabled").getInt(c) == enabled
+    }.getOrDefault(false)
+
     // --- Diagnostics ---------------------------------------------------------------------------
 
     private fun describe(c: Configuration) =
@@ -140,7 +195,7 @@ class MainActivity : GameActivity() {
     override fun onStop() { Diag.log("onStop"); super.onStop() }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        Diag.log("onConfigurationChanged ${describe(newConfig)}")
+        Diag.log("onConfigurationChanged dex=${isDexMode(newConfig)} ${describe(newConfig)}")
         super.onConfigurationChanged(newConfig)
     }
 
@@ -339,6 +394,8 @@ class MainActivity : GameActivity() {
             "clip_set_image" -> { clipboard.setImage(args.getInt("width"), args.getInt("height"), data ?: ByteArray(0)); null }
             "clip_files" -> { clipboard.setFiles(args.getJSONArray("paths")); null }
             "toast" -> { toast(args.getString("text")); null }
+            "cursor" -> { setCursor(args.getInt("type")); null }
+            "title" -> { setWindowTitle(args.getString("title")); null }
             "finish" -> { runOnUiThread { finishAndRemoveTask() }; null }
             "restart" -> { runOnUiThread { restartInFreshProcess() }; null }
             else -> { Log.w(TAG, "bridge: unknown operation $op"); null }

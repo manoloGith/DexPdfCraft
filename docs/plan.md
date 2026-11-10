@@ -10,8 +10,8 @@ submódulo.
 | 0 | Repositorio: submódulo `upstream/`, workspace Cargo con los `[patch]` de upstream, Gradle + cargo-ndk, CI, licencias y marcas | ✅ |
 | 1 | Prueba técnica: eframe/winit en Android (GameActivity), wgpu con glow de reserva, motor y renderizador de PdfCraft en ARM64, entrada de DeX | ✅ código · ⬜ probar en DeX ([phase-1.md](phase-1.md)) |
 | 2 | `pdfcraft-ui-egui` en Android: shims de `rfd` y `arboard` en el fork ([fork.md](fork.md)), sin logotipos de ArtCraft; la app arranca `PdfCraftApp` con las carpetas de datos en el almacenamiento privado; compila para arm64 | ✅ código ([phase-2.md](phase-2.md)): compila para arm64, arranca en escritorio, idioma del sistema, `/system/fonts` · ⬜ probar en DeX |
-| 3 | Puente Kotlin ↔ Rust ([phase-3.md](phase-3.md)): SAF abrir/guardar/guardar como/carpetas con escritura de vuelta, portapapeles, «Abrir con» y «Compartir hacia» la app | ✅ código · ⬜ probar en DeX · ⬜ imprimir (`PrintManager`), compartir desde la app, TTS, arrastrar y soltar |
-| 4 | DeX y escritorio: detectar el modo escritorio, escala de interfaz, cursores (`PointerIcon`), atajos completos, sin decoraciones propias | ⬜ |
+| 3 | Puente Kotlin ↔ Rust ([phase-3.md](phase-3.md)): SAF abrir/guardar/guardar como/carpetas con escritura de vuelta, portapapeles, «Abrir con» y «Compartir hacia» la app; ratón y teclado físico por la actividad; ciclo de vida de DeX | ✅ probado en DeX · ⬜ imprimir (`PrintManager`), compartir desde la app, TTS |
+| 4 | DeX y escritorio ([phase-4.md](phase-4.md)): cursores del sistema, título de la tarea, arrastrar y soltar PDFs, detección de DeX | ✅ código · ⬜ probar en DeX |
 | 5 | Paridad de funciones con las listas de upstream (`upstream/docs/*-parity.md`): impresión, OCR en proceso, firma, formularios JS, redacción, exportación | ⬜ |
 | 6 | Opcional: móvil y tablet sin DeX (misma interfaz, escala mayor, gestos) | ⬜ |
 | 7 | Rendimiento y memoria en ARM, autoguardado ante cierre en segundo plano, firma del APK, F-Droid | ⬜ |

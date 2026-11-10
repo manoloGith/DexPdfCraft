@@ -3,6 +3,7 @@
 
 mod bridge;
 mod clipboard;
+pub mod desktop;
 pub mod events;
 mod pickers;
 

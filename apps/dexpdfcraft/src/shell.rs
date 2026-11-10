@@ -73,6 +73,12 @@ impl eframe::App for Shell {
 
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         self.app.ui(ui, frame);
+        // On Android, winit ignores the cursor and the title: hand them to the activity.
+        #[cfg(target_os = "android")]
+        {
+            crate::android::desktop::set_cursor(ui.ctx().output(|o| o.cursor_icon));
+            crate::android::desktop::set_title(&self.app.window_title);
+        }
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {

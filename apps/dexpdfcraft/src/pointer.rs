@@ -94,6 +94,35 @@ pub fn to_egui(p: &Pointer, pixels_per_point: f32, down: &mut u32) -> Vec<egui::
     out
 }
 
+/// Android's `PointerIcon` type for an egui cursor (`PointerIcon.TYPE_*`), the closest one.
+pub fn pointer_icon_type(icon: egui::CursorIcon) -> i32 {
+    use egui::CursorIcon as C;
+    match icon {
+        C::None => 0,                                // TYPE_NULL
+        C::ContextMenu => 1001,                      // TYPE_CONTEXT_MENU
+        C::PointingHand => 1002,                     // TYPE_HAND
+        C::Help => 1003,                             // TYPE_HELP
+        C::Wait | C::Progress => 1004,               // TYPE_WAIT
+        C::Cell => 1006,                             // TYPE_CELL
+        C::Crosshair => 1007,                        // TYPE_CROSSHAIR
+        C::Text => 1008,                             // TYPE_TEXT
+        C::VerticalText => 1009,                     // TYPE_VERTICAL_TEXT
+        C::Alias => 1010,                            // TYPE_ALIAS
+        C::Copy => 1011,                             // TYPE_COPY
+        C::NoDrop | C::NotAllowed => 1012,           // TYPE_NO_DROP
+        C::Move | C::AllScroll => 1013,              // TYPE_ALL_SCROLL
+        C::ResizeHorizontal | C::ResizeEast | C::ResizeWest | C::ResizeColumn => 1014, // TYPE_HORIZONTAL_DOUBLE_ARROW
+        C::ResizeVertical | C::ResizeNorth | C::ResizeSouth | C::ResizeRow => 1015, // TYPE_VERTICAL_DOUBLE_ARROW
+        C::ResizeNeSw | C::ResizeNorthEast | C::ResizeSouthWest => 1016, // TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW
+        C::ResizeNwSe | C::ResizeNorthWest | C::ResizeSouthEast => 1017, // TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW
+        C::ZoomIn => 1018,                           // TYPE_ZOOM_IN
+        C::ZoomOut => 1019,                          // TYPE_ZOOM_OUT
+        C::Grab => 1020,                             // TYPE_GRAB
+        C::Grabbing => 1021,                         // TYPE_GRABBING
+        _ => 1000,                                   // TYPE_ARROW (Default, and any newer cursor)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,6 +162,17 @@ mod tests {
         assert_eq!(out.iter().filter(|e| matches!(e, egui::Event::PointerButton { pressed: false, .. })).count(), 2);
         assert_eq!(out.last(), Some(&egui::Event::PointerGone));
         assert_eq!(down, 0);
+    }
+
+    #[test]
+    fn cursors_map_to_android_pointer_icons() {
+        assert_eq!(pointer_icon_type(egui::CursorIcon::Default), 1000);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::PointingHand), 1002);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::Text), 1008);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::ResizeHorizontal), 1014);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::ResizeNwSe), 1017);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::Grabbing), 1021);
+        assert_eq!(pointer_icon_type(egui::CursorIcon::None), 0);
     }
 
     #[test]
