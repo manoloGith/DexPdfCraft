@@ -183,26 +183,26 @@ impl ProbeApp {
 
     fn quick_toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            if ui.button("☰").on_hover_text("All tools (Ctrl+B)").clicked() {
+            if ui.button("Tools").on_hover_text("All tools (Ctrl+B)").clicked() {
                 self.left_open = !self.left_open;
             }
             ui.separator();
-            if ui.button("⏮").on_hover_text("First page (Home)").clicked() {
+            if ui.button("|<").on_hover_text("First page (Home)").clicked() {
                 self.go_to(0);
             }
-            if ui.button("◀").on_hover_text("Previous page (Page Up)").clicked() {
+            if ui.button("<").on_hover_text("Previous page (Page Up)").clicked() {
                 self.go_to(self.page.saturating_sub(1));
             }
             let count = self.page_count();
             ui.label(format!("{} / {}", if count == 0 { 0 } else { self.page + 1 }, count));
-            if ui.button("▶").on_hover_text("Next page (Page Down)").clicked() {
+            if ui.button(">").on_hover_text("Next page (Page Down)").clicked() {
                 self.go_to(self.page.saturating_add(1));
             }
-            if ui.button("⏭").on_hover_text("Last page (End)").clicked() {
+            if ui.button(">|").on_hover_text("Last page (End)").clicked() {
                 self.go_to(usize::MAX);
             }
             ui.separator();
-            if ui.button("−").on_hover_text("Zoom out (Ctrl+−)").clicked() {
+            if ui.button("-").on_hover_text("Zoom out (Ctrl+−)").clicked() {
                 self.zoom_step(false);
             }
             ui.label(format!("{:.0}%", self.zoom * 100.0));
@@ -215,10 +215,16 @@ impl ProbeApp {
                 ui.ctx().set_zoom_factor(self.ui_scale);
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("ⓘ").on_hover_text("Input diagnostics").clicked() {
+                if ui.button("Diagnostics").on_hover_text("Input diagnostics").clicked() {
                     self.right_open = !self.right_open;
                 }
-                egui::widgets::global_theme_preference_buttons(ui);
+                // text, not egui's emoji buttons: the default fonts have no glyphs for them
+                let ctx = ui.ctx().clone();
+                let mut pref = ctx.options(|o| o.theme_preference);
+                for (p, label) in [(egui::ThemePreference::Dark, "Dark"), (egui::ThemePreference::Light, "Light"), (egui::ThemePreference::System, "System")] {
+                    ui.selectable_value(&mut pref, p, label);
+                }
+                ctx.set_theme(pref);
             });
         });
     }
@@ -282,7 +288,7 @@ impl ProbeApp {
         ui.add_space(4.0);
         let hover_box = ui.add(egui::Button::new("Hover, right-click or middle-click me").min_size(egui::vec2(ui.available_width(), 36.0)));
         if hover_box.hovered() {
-            ui.label("↑ hovered");
+            ui.label("^ hovered");
         }
         if hover_box.middle_clicked() {
             self.push_log("middle click on the test button".into());
