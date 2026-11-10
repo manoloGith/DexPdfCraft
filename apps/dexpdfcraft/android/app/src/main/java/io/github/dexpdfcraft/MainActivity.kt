@@ -58,6 +58,7 @@ class MainActivity : GameActivity() {
                 "android=${android.os.Build.VERSION.SDK_INT} device=${android.os.Build.MODEL}",
         )
         recordJavaCrashes()
+        offerTesseract()
         super.onCreate(savedInstanceState) // loads libdexpdfcraft.so and starts android_main
         if (reused) {
             // This process has already run the library (its window can't be created twice):
@@ -197,6 +198,20 @@ class MainActivity : GameActivity() {
         } catch (e: Exception) {
             Diag.log("no app for a link: ${e.javaClass.simpleName}")
             toast(getString(R.string.no_app_for_link))
+        }
+    }
+
+    /**
+     * Tesseract, PdfCraft's second OCR engine (the languages the built-in one lacks), when the APK
+     * carries it: installed as lib/<abi>/libtesseract.so in the native-library folder, the one
+     * place Android runs programs from. PdfCraft runs the program PDFCRAFT_TESSERACT names; set
+     * before the library starts, so it reads it with the rest of its environment.
+     */
+    private fun offerTesseract() {
+        val program = File(applicationInfo.nativeLibraryDir, "libtesseract.so")
+        if (program.isFile) {
+            android.system.Os.setenv("PDFCRAFT_TESSERACT", program.absolutePath, true)
+            Diag.log("tesseract: ${program.length()} bytes, executable=${program.canExecute()}")
         }
     }
 

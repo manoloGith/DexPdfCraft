@@ -86,6 +86,39 @@ abstract class OcrModels : DefaultTask() {
     }
 }
 
+/**
+ * Tesseract, PdfCraft's second OCR engine (scripts/build-tesseract-android.sh): the program as
+ * lib/<abi>/libtesseract.so and its language data as assets/tessdata, when they have been built.
+ * Without them the app builds; Scan & OCR then offers only the built-in engine (English).
+ */
+abstract class TesseractFiles : DefaultTask() {
+    @get:Input abstract val buildDir: Property<String>
+    @get:Input abstract val abis: ListProperty<String>
+    @get:Input abstract val assets: Property<Boolean>
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = outputDir.get().asFile
+        out.deleteRecursively()
+        out.mkdirs()
+        val root = File(buildDir.get())
+        if (assets.get()) {
+            val data = File(root, "tessdata").listFiles { f -> f.isFile && (f.extension == "traineddata" || f.name == "LICENSE") }.orEmpty()
+            if (data.isNotEmpty()) {
+                val dir = File(out, "tessdata").apply { mkdirs() }
+                data.forEach { it.copyTo(File(dir, it.name), overwrite = true) }
+            }
+        } else {
+            for (abi in abis.get()) {
+                val program = File(root, "tesseract/$abi/libtesseract.so")
+                if (program.isFile) program.copyTo(File(out, "$abi/libtesseract.so"), overwrite = true)
+                else logger.warn("Tesseract not built for $abi: run scripts/build-tesseract-android.sh $abi")
+            }
+        }
+    }
+}
+
 android {
     namespace = "io.github.dexpdfcraft"
     compileSdk = 36
@@ -123,11 +156,13 @@ android {
     androidResources {
         // The OCR models are read by the library; storing them uncompressed lets them be
         // copied out quickly (they barely compress anyway).
-        noCompress += listOf("onnx", "rten")
+        noCompress += listOf("onnx", "rten", "traineddata")
     }
     packaging {
-        // The activity loads the library by name: keep it uncompressed and page-aligned.
-        jniLibs { useLegacyPackaging = false }
+        // Native libraries are extracted to the app's native-library folder when installed:
+        // Tesseract (libtesseract.so) is a program PdfCraft runs, and Android runs programs
+        // only from there.
+        jniLibs { useLegacyPackaging = true }
     }
 }
 
@@ -156,6 +191,21 @@ androidComponents {
             outputs.upToDateWhen { false }
         }
         variant.sources.assets?.addGeneratedSourceDirectory(models, OcrModels::outputDir)
+        val inputs = File(cargoWorkspaceDir, ".build-inputs").absolutePath
+        val tesseract = tasks.register<TesseractFiles>("tesseract$name") {
+            buildDir.set(inputs)
+            abis.set(rustAbis)
+            assets.set(false)
+            outputs.upToDateWhen { false }
+        }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(tesseract, TesseractFiles::outputDir)
+        val tessdata = tasks.register<TesseractFiles>("tessdata$name") {
+            buildDir.set(inputs)
+            abis.set(rustAbis)
+            assets.set(true)
+            outputs.upToDateWhen { false }
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(tessdata, TesseractFiles::outputDir)
     }
 }
 

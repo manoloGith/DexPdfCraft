@@ -63,6 +63,11 @@ fn android_main(app: AndroidApp) {
     if let Some(dir) = extract_models(&app, &data.join("models")) {
         set_var("PDFCRAFT_MODELS", dir.as_os_str());
     }
+    // Tesseract's language data (when the APK carries Tesseract; MainActivity sets
+    // PDFCRAFT_TESSERACT): Tesseract reads it from TESSDATA_PREFIX.
+    if let Some(dir) = extract_asset_dir(&app, "tessdata", &data.join("tessdata")) {
+        set_var("TESSDATA_PREFIX", dir.as_os_str());
+    }
     // The system pickers and clipboard, through MainActivity (rfd and arboard shims).
     rfd::set_backend(Box::new(pickers::SafPickers));
     arboard::set_backend(Box::new(clipboard::SystemClipboard));
@@ -129,6 +134,39 @@ fn extract_models(app: &AndroidApp, dir: &Path) -> Option<PathBuf> {
     }
     diag("models: none in the APK (Scan & OCR will say they aren't installed)");
     None
+}
+
+/// Every file of the APK's `assets/<asset_dir>`, copied to `dir` when missing or of another size
+/// (an update changed it). The folder, if the APK has any such file.
+fn extract_asset_dir(app: &AndroidApp, asset_dir: &str, dir: &Path) -> Option<PathBuf> {
+    let assets = app.asset_manager();
+    let name = std::ffi::CString::new(asset_dir).ok()?;
+    let files: Vec<std::ffi::CString> = assets.open_dir(&name)?.collect();
+    if files.is_empty() {
+        return None;
+    }
+    std::fs::create_dir_all(dir).ok()?;
+    for file in files {
+        let Ok(file_name) = file.into_string() else { continue };
+        let Ok(path) = std::ffi::CString::new(format!("{asset_dir}/{file_name}")) else { continue };
+        let Some(mut asset) = assets.open(&path) else { continue };
+        let target = dir.join(&file_name);
+        if std::fs::metadata(&target).map(|m| m.len()).ok() == u64::try_from(asset.length()).ok() {
+            continue;
+        }
+        let partial = dir.join(format!(".{file_name}.part"));
+        let copied = std::fs::File::create(&partial)
+            .and_then(|mut f| std::io::copy(&mut asset, &mut f))
+            .and_then(|_| std::fs::rename(&partial, &target));
+        match copied {
+            Ok(()) => diag(&format!("{asset_dir}: {file_name} installed")),
+            Err(e) => {
+                let _ = std::fs::remove_file(&partial);
+                diag(&format!("{asset_dir}: copying {file_name} failed: {e}"));
+            }
+        }
+    }
+    Some(dir.to_path_buf())
 }
 
 /// Write every panic (message, place, backtrace) to `file`, after the default hook has logged it,
