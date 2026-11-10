@@ -37,6 +37,32 @@ de la barra de estado. Saca también el log:
 adb logcat -s dexpdfcraft RustStdoutStderr AndroidRuntime
 ```
 
-## Resultados de compilación (en el contenedor de desarrollo)
+## Verificado en el contenedor de desarrollo (sin dispositivo)
 
-Ver la sección «Verificado» del commit de la fase 1.
+- `libdexpdfcraft.so` compila para `aarch64-linux-android` (API 29) con cargo-ndk y NDK 29. Exporta
+  `android_main`, `GameActivity_onCreate` y `Java_com_google_androidgamesdk_GameActivity_initializeNativeCode`.
+- `./gradlew assembleDebug -Pdexpdfcraft.abis=arm64-v8a` genera un APK de 24,8 MB (minSdk 29, targetSdk 36).
+- La misma ventana en escritorio (`--features desktop`), bajo Xvfb, arranca wgpu (Vulkan, llvmpipe) y
+  renderiza el PDF de muestra con `pdfcraft-render`: ver [images/phase1-desktop.png](images/phase1-desktop.png).
+- **No probado aún en un dispositivo DeX**: el contenedor no tiene KVM ni hardware Android. La tabla
+  de arriba es la lista que hay que pasar en el dispositivo.
+
+### Cambio respecto al plan: GameActivity en lugar de NativeActivity
+
+eframe solo admite `accesskit` con el backend `android-game-activity`, y `pdfcraft-ui-egui` activa
+`accesskit`. GameActivity también trae soporte de IME (GameTextInput), así que la app usa GameActivity
+(`androidx.games:games-activity` 4.4.0, la versión que admite android-activity 0.6).
+
+## Tanteo de la fase 2: `pdfcraft-ui-egui` para Android
+
+`cargo ndk -t arm64-v8a check -p pdfcraft-ui-egui` en el workspace de upstream:
+
+- **El motor completo compila para Android**, incluidos `engine`, `render`, `sign`, `ocr` y `automation`.
+- Fallan solo tres dependencias de terceros, todas previstas en el plan:
+  - `rfd` (diálogos de archivo y de mensaje): no tiene backend Android. Se sustituye por SAF a través de
+    Kotlin (fase 3) y se aísla con `cfg(not(target_os = "android"))` (unos 53 usos de `rfd::` en `ui-egui`).
+  - `arboard` (portapapeles de imágenes): no tiene backend Android. `cfg` y el `ClipboardManager` de Android.
+  - `android-activity`: necesita que alguien active `game-activity`. Lo hace el crate de la app; aquí
+    falla solo porque `ui-egui` se compiló sin ella.
+- Como `upstream/` no se modifica, esos `cfg` van en una rama de un fork de PdfCraft o se proponen
+  upstream como PR. Es la primera decisión de la fase 2.
