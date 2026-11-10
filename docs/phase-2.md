@@ -30,8 +30,9 @@ La ventana de diagnóstico de la fase 1 sigue disponible con la feature `probe`.
 
 ## Verificado aquí (sin dispositivo)
 
-- La librería compila para `aarch64-linux-android`. El APK de depuración (arm64) pesa unos 82 MB, de
-  los que 57 MB son la librería: el motor completo, la interfaz y las fuentes incrustadas.
+- La librería compila para `aarch64-linux-android`. El APK de depuración (arm64) con las traducciones
+  incrustadas pesa unos 95 MB, casi todo la librería: el motor completo, la interfaz, las fuentes
+  y los catálogos de idiomas.
   Reducirlo queda para la fase 7.
 - El binario de escritorio de DexPdfCraft muestra la interfaz completa de PdfCraft (capturas en
   `images/`), en inglés y en español.
