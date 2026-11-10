@@ -10,6 +10,7 @@ pub mod app;
 pub mod doc;
 pub mod pdfcraft;
 pub mod protocol;
+pub mod shell;
 
 /// The sample opened on first start (a test document of DexPdfCraft's own).
 pub const SAMPLE_PDF: &[u8] = include_bytes!("../assets/sample.pdf");
@@ -70,7 +71,7 @@ fn create(cc: &eframe::CreationContext<'_>, launch: Launch) -> Box<dyn eframe::A
         let pdf = Ok(("sample.pdf".to_owned(), SAMPLE_PDF.to_vec()));
         return Box::new(app::ProbeApp::new(cc, launch.platform, pdf));
     }
-    Box::new(pdfcraft::create(cc, &launch))
+    Box::new(shell::Shell::new(pdfcraft::create(cc, &launch)))
 }
 
 /// The system language as a POSIX locale (`es_ES.UTF-8`), which PdfCraft's Auto language reads

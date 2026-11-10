@@ -56,6 +56,14 @@ PdfCraft (Rust) ──rfd / arboard──▶ shims ──backends──▶ andro
 6. Copiar texto e imágenes de la página y pegarlos en otra app, y al revés.
 7. Reiniciar la app, abrir un documento de Recientes, editarlo y guardar: el cambio llega al original.
 
+## Correcciones tras la primera prueba en DeX
+
+| Síntoma | Causa | Arreglo |
+|---|---|---|
+| La rueda del ratón no hace nada; tampoco hay hover ni clic derecho | El backend Android de winit convertía cualquier evento de puntero en un toque e ignoraba `ACTION_SCROLL`, el hover y los botones | `vendor/winit` (el winit de storytold más el parche W-DEX1, en `vendor/winit/PATCHES.md`): un ratón genera `CursorMoved`, `MouseInput` según `button_state` (izquierdo, derecho, central, atrás, adelante) y `MouseWheel` según `AXIS_VSCROLL`/`AXIS_HSCROLL`. Lo protege el test `android_mice_are_mice_not_fingers` |
+| Al cerrar no pregunta si se quieren guardar los cambios | winit ignora la destrucción de la actividad, así que PdfCraft nunca recibía la petición de cierre | «Atrás» (gesto o tecla) llega a PdfCraft como cierre de ventana (`shell.rs`) y sale su pregunta «¿guardar cambios?». Solo cuando PdfCraft deja cerrar, la app pide a Android que termine la actividad. La X de una ventana de DeX la gestiona el sistema y no se puede interceptar; para ese caso, PdfCraft guarda en su recuperación cada vez que la ventana pierde el foco, y el siguiente arranque ofrece recuperar el trabajo |
+| Tras cerrar, al volver a abrir la app se cierra sola | El proceso seguía vivo con el bucle de eventos de winit, que no se puede crear dos veces en un proceso | Al destruirse la actividad se termina el proceso (`onDestroy`), después de esperar a que acaben de escribirse los guardados pendientes en los documentos originales. Cada arranque es un proceso nuevo |
+
 ## Pendiente
 
 - **Imprimir** con `PrintManager` y **compartir** desde PdfCraft. La app de escritorio imprime con

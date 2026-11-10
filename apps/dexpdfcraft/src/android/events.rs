@@ -34,6 +34,8 @@ pub fn dispatch(op: &str, json: &str) {
                 ctx.request_repaint();
             }
         }
+        // Back or Esc: PdfCraft decides (it asks about unsaved changes first).
+        "close" => crate::shell::request_close(CONTEXT.get()),
         _ => log::warn!("dexpdfcraft: unknown event {op}"),
     }
 }

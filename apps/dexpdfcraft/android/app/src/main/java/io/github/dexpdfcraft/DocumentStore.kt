@@ -48,6 +48,18 @@ class DocumentStore(private val context: Context) {
         }
     }
 
+    /**
+     * Finish writing saves back before the process ends: give the file observers a moment to
+     * report a save that has just happened, then wait (up to [timeoutMs]) for the writes queued.
+     */
+    fun flush(timeoutMs: Long) {
+        Thread.sleep(OBSERVER_GRACE_MS)
+        io.shutdown()
+        if (!io.awaitTermination(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            Log.w(TAG, "saves were still being written back when the app closed")
+        }
+    }
+
     /** Copy [uri] to its local mirror and return the mirror's path (on the caller's thread). */
     fun open(uri: Uri, writable: Boolean): String? {
         keepPermission(uri, writable)
@@ -176,6 +188,9 @@ class DocumentStore(private val context: Context) {
 
     companion object {
         private const val TAG = "dexpdfcraft"
+
+        /** How long a file observer may take to report a write (inotify is near instant). */
+        private const val OBSERVER_GRACE_MS = 300L
 
         /** A stable folder name for a document: the same document opens at the same path. */
         fun key(uri: Uri): String =

@@ -39,6 +39,11 @@ fn android_main(app: AndroidApp) {
         },
         launch,
     );
+    // The window closed (PdfCraft allowed it, after asking about unsaved changes): close the
+    // activity too. Its onDestroy ends the process, so the next start gets a fresh one (winit's
+    // event loop can be created only once per process).
+    log::info!("dexpdfcraft: the window closed; finishing the activity");
+    bridge::call("finish", "", None);
 }
 
 /// PdfCraft keeps settings, recovery data and its dictionary under `$HOME` and the XDG folders

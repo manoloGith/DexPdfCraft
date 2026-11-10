@@ -3,8 +3,10 @@ package io.github.dexpdfcraft
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Process
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import com.google.androidgamesdk.GameActivity
 import org.json.JSONArray
 import org.json.JSONObject
@@ -35,6 +37,11 @@ class MainActivity : GameActivity() {
         documents = DocumentStore(applicationContext).also { it.start() }
         clipboard = ClipboardBridge(applicationContext)
         nativeRegister(this)
+        // Back closes the window the way its close button does on a desktop: PdfCraft asks about
+        // unsaved changes first, and asks Android to finish only if the window may close.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = nativeEvent("close", "{}")
+        })
         if (savedInstanceState == null) handleIntent(intent)
     }
 
@@ -47,6 +54,13 @@ class MainActivity : GameActivity() {
     override fun onDestroy() {
         if (current === this) current = null
         super.onDestroy()
+        // The library's window and event loop live for the whole process and can't be created a
+        // second time in it, so a destroyed activity ends the process: the next start is a fresh
+        // one. Unsaved work is in PdfCraft's crash recovery (it autosaves when the window loses
+        // focus) and is offered back then.
+        Log.i(TAG, "activity destroyed; ending the process")
+        documents.flush(timeoutMs = 4_000)
+        Process.killProcess(Process.myPid())
     }
 
     /** "Open with" and "Share" from other apps: open the PDFs in a new tab. */
@@ -82,6 +96,7 @@ class MainActivity : GameActivity() {
             "clip_set_image" -> { clipboard.setImage(args.getInt("width"), args.getInt("height"), data ?: ByteArray(0)); null }
             "clip_files" -> { clipboard.setFiles(args.getJSONArray("paths")); null }
             "toast" -> { toast(args.getString("text")); null }
+            "finish" -> { runOnUiThread { finishAndRemoveTask() }; null }
             else -> { Log.w(TAG, "bridge: unknown operation $op"); null }
         }
     } catch (e: Exception) {
@@ -167,7 +182,7 @@ class MainActivity : GameActivity() {
     /** This activity, for the library (stored as a global reference on the Rust side). */
     private external fun nativeRegister(activity: MainActivity)
 
-    /** An event for the library: `picked` `{id, paths}` or `open` `{paths}`. */
+    /** An event for the library: `picked` `{id, paths}`, `open` `{paths}` or `close` `{}`. */
     private external fun nativeEvent(op: String, json: String)
 
     companion object {
