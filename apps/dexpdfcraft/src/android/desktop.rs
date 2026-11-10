@@ -26,3 +26,14 @@ pub fn set_title(title: &str) {
         super::bridge::call("title", &json!({ "title": title }).to_string(), None);
     }
 }
+
+/// Open a link with the app that handles it (only web, mail and phone links: a document's link
+/// to anything else, such as a file on the device, is not followed).
+pub fn open_url(url: &str) {
+    let lower = url.trim().to_ascii_lowercase();
+    if ["https://", "http://", "mailto:", "tel:"].iter().any(|scheme| lower.starts_with(scheme)) {
+        super::bridge::call("open_url", &json!({ "url": url.trim() }).to_string(), None);
+    } else {
+        super::diag("a link with an unsupported scheme was not opened");
+    }
+}

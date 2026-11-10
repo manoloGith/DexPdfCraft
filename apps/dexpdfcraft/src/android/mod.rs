@@ -4,6 +4,7 @@
 mod bridge;
 mod clipboard;
 pub mod desktop;
+pub mod print;
 pub mod events;
 mod pickers;
 
@@ -58,6 +59,10 @@ fn android_main(app: AndroidApp) {
     let config = app.config();
     let locale = crate::posix_locale(config.language().as_deref(), config.country().as_deref());
     set_environment(&data, &locale);
+    // The OCR models ship in the APK's assets; PdfCraft reads them from files.
+    if let Some(dir) = extract_models(&app, &data.join("models")) {
+        set_var("PDFCRAFT_MODELS", dir.as_os_str());
+    }
     // The system pickers and clipboard, through MainActivity (rfd and arboard shims).
     rfd::set_backend(Box::new(pickers::SafPickers));
     arboard::set_backend(Box::new(clipboard::SystemClipboard));
@@ -82,6 +87,48 @@ fn android_main(app: AndroidApp) {
     // event loop can be created only once per process).
     diag("the event loop ended; finishing the activity");
     bridge::call("finish", "", None);
+}
+
+/// The OCR models the APK carries (assets/models), copied to `dir` the first time and after an
+/// update that changed them (their size differs). The folder, if a pair is there.
+fn extract_models(app: &AndroidApp, dir: &Path) -> Option<PathBuf> {
+    const PAIRS: [[&str; 2]; 2] = [["text-detection.onnx", "text-recognition.onnx"], ["text-detection.rten", "text-recognition.rten"]];
+    let assets = app.asset_manager();
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        diag(&format!("models: {e}"));
+        return None;
+    }
+    for pair in PAIRS {
+        let mut complete = true;
+        for name in pair {
+            let Ok(asset_name) = std::ffi::CString::new(format!("models/{name}")) else { return None };
+            let Some(mut asset) = assets.open(&asset_name) else {
+                complete = false;
+                break;
+            };
+            let target = dir.join(name);
+            let current = std::fs::metadata(&target).map(|m| m.len()).ok();
+            if current == u64::try_from(asset.length()).ok() {
+                continue;
+            }
+            let partial = dir.join(format!(".{name}.part"));
+            let copied = std::fs::File::create(&partial)
+                .and_then(|mut f| std::io::copy(&mut asset, &mut f))
+                .and_then(|_| std::fs::rename(&partial, &target));
+            if let Err(e) = copied {
+                let _ = std::fs::remove_file(&partial);
+                diag(&format!("models: copying {name} failed: {e}"));
+                complete = false;
+                break;
+            }
+            diag(&format!("models: {name} installed"));
+        }
+        if complete {
+            return Some(dir.to_path_buf());
+        }
+    }
+    diag("models: none in the APK (Scan & OCR will say they aren't installed)");
+    None
 }
 
 /// Write every panic (message, place, backtrace) to `file`, after the default hook has logged it,

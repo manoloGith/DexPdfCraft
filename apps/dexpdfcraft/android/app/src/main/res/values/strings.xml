@@ -9,4 +9,6 @@
     <string name="report_title">DexPdfCraft diagnostics</string>
     <string name="diagnostics_label">DexPdfCraft diagnostics</string>
     <string name="diagnostics_short">Diagnostics</string>
+    <string name="print_failed">Printing could not start.</string>
+    <string name="no_app_for_link">No app can open this link.</string>
 </resources>

@@ -40,6 +40,9 @@ pub fn create(cc: &eframe::CreationContext<'_>, launch: &Launch) -> PdfCraftApp 
     {
         crate::android::events::set_context(cc.egui_ctx.clone());
         app.os_events = Some(Box::new(crate::android::events::poll));
+        // Print jobs go to Android's print dialog; the spool files live in the cache.
+        let cache = std::env::var_os("XDG_CACHE_HOME").map_or_else(std::env::temp_dir, std::path::PathBuf::from);
+        crate::android::print::install(&mut app, cache.join("print"));
     }
     app.reopen_last_files(&launch.files);
     for file in &launch.files {

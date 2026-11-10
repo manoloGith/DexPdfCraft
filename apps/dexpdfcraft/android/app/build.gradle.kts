@@ -63,6 +63,29 @@ abstract class CargoNdkBuild : DefaultTask() {
     }
 }
 
+/**
+ * The text-recognition models (scripts/fetch-build-inputs.sh puts them in .build-inputs/models,
+ * or DEXPDFCRAFT_MODELS_DIR names them) copied into the APK's assets/models. Without them the app
+ * still builds; Scan & OCR then says they aren't installed.
+ */
+abstract class OcrModels : DefaultTask() {
+    @get:Input abstract val modelsDir: Property<String>
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = File(outputDir.get().asFile, "models")
+        out.deleteRecursively()
+        val files = File(modelsDir.get()).listFiles { f -> f.isFile && !f.name.endsWith(".part") }.orEmpty()
+        if (files.none { it.extension == "onnx" || it.extension == "rten" }) {
+            logger.warn("OCR models not found in ${modelsDir.get()}: run scripts/fetch-build-inputs.sh")
+            return
+        }
+        out.mkdirs()
+        for (f in files) f.copyTo(File(out, f.name), overwrite = true)
+    }
+}
+
 android {
     namespace = "io.github.dexpdfcraft"
     compileSdk = 36
@@ -97,6 +120,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    androidResources {
+        // The OCR models are read by the library; storing them uncompressed lets them be
+        // copied out quickly (they barely compress anyway).
+        noCompress += listOf("onnx", "rten")
+    }
     packaging {
         // The activity loads the library by name: keep it uncompressed and page-aligned.
         jniLibs { useLegacyPackaging = false }
@@ -121,6 +149,13 @@ androidComponents {
             outputs.upToDateWhen { false }
         }
         variant.sources.jniLibs?.addGeneratedSourceDirectory(cargoBuild, CargoNdkBuild::outputDir)
+        val models = tasks.register<OcrModels>("ocrModels$name") {
+            modelsDir.set(
+                providers.environmentVariable("DEXPDFCRAFT_MODELS_DIR").orElse(File(cargoWorkspaceDir, ".build-inputs/models").absolutePath),
+            )
+            outputs.upToDateWhen { false }
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(models, OcrModels::outputDir)
     }
 }
 

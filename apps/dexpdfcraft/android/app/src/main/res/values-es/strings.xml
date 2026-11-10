@@ -8,4 +8,6 @@
     <string name="report_title">Diagnóstico de DexPdfCraft</string>
     <string name="diagnostics_label">Diagnóstico DexPdfCraft</string>
     <string name="diagnostics_short">Diagnóstico</string>
+    <string name="print_failed">No se pudo empezar a imprimir.</string>
+    <string name="no_app_for_link">Ninguna app puede abrir este enlace.</string>
 </resources>

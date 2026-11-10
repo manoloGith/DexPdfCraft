@@ -10,6 +10,13 @@ incluidos como submódulo en `upstream/` desde el fork
 El proceso de compilación con Gradle y cargo-ndk se basa en el de
 [PdfCraft for Android](https://github.com/artcraft-android/pdfcraft-android) (MIT o Apache-2.0).
 
+## Modelos de reconocimiento de texto (OCR)
+
+El APK incluye, sin modificar, los modelos de [ocrs](https://github.com/robertknight/ocrs-models)
+de Robert Knight (entrenados con HierText), con licencia **CC-BY-SA-4.0**. Se descargan al compilar
+(`scripts/fetch-build-inputs.sh`), con el SHA-256 que fija PdfCraft, y viajan en
+`assets/models/` junto a su `ATTRIBUTION.txt` y el texto de la licencia.
+
 ## Marcas
 
 El nombre y los logotipos de **ArtCraft** (`upstream/docs/brand/`) son marcas del ArtCraft Team y

@@ -12,6 +12,8 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
+import android.print.PrintAttributes
+import android.print.PrintManager
 import android.util.Log
 import android.view.DragEvent
 import android.view.InputDevice
@@ -173,6 +175,28 @@ class MainActivity : GameActivity() {
                 }
                 else -> true
             }
+        }
+    }
+
+    /** Android's print dialog for a PDF PdfCraft composed (see `print.rs`). */
+    private fun print(file: File, title: String) = runOnUiThread {
+        val manager = getSystemService(PRINT_SERVICE) as PrintManager
+        try {
+            manager.print(title, PdfPrintAdapter(file, "$title.pdf"), PrintAttributes.Builder().build())
+        } catch (e: Exception) {
+            Diag.log("print failed: $e")
+            toast(getString(R.string.print_failed))
+            file.delete()
+        }
+    }
+
+    /** A link (in a document, Help ▸ …) in the browser or the app that handles it. */
+    private fun openUrl(url: String) = runOnUiThread {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            Diag.log("no app for a link: ${e.javaClass.simpleName}")
+            toast(getString(R.string.no_app_for_link))
         }
     }
 
@@ -395,6 +419,8 @@ class MainActivity : GameActivity() {
             "clip_files" -> { clipboard.setFiles(args.getJSONArray("paths")); null }
             "toast" -> { toast(args.getString("text")); null }
             "cursor" -> { setCursor(args.getInt("type")); null }
+            "print" -> { print(File(args.getString("path")), args.getString("title")); null }
+            "open_url" -> { openUrl(args.getString("url")); null }
             "title" -> { setWindowTitle(args.getString("title")); null }
             "finish" -> { runOnUiThread { finishAndRemoveTask() }; null }
             "restart" -> { runOnUiThread { restartInFreshProcess() }; null }

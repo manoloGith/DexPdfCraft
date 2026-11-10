@@ -78,6 +78,22 @@ impl eframe::App for Shell {
         {
             crate::android::desktop::set_cursor(ui.ctx().output(|o| o.cursor_icon));
             crate::android::desktop::set_title(&self.app.window_title);
+            // Links open with an Intent (eframe's own way needs a browser crate's Android
+            // support): take them out of egui's output before eframe sees them.
+            let urls = ui.ctx().output_mut(|o| {
+                let mut urls = Vec::new();
+                o.commands.retain(|c| match c {
+                    egui::OutputCommand::OpenUrl(open) => {
+                        urls.push(open.url.clone());
+                        false
+                    }
+                    _ => true,
+                });
+                urls
+            });
+            for url in urls {
+                crate::android::desktop::open_url(&url);
+            }
         }
     }
 
