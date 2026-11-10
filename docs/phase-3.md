@@ -40,7 +40,11 @@ PdfCraft (Rust) ──rfd / arboard──▶ shims ──backends──▶ andro
 
 - La librería compila y pasa clippy sin avisos para Android arm64 y para el host. Los tests del
   protocolo y del idioma pasan: 5 tests.
-- El APK se construye y compila el Kotlin (ver el commit).
+- El APK de depuración (arm64, 95 MB) se construye y el Kotlin compila sin avisos. El APK exporta
+  `android_main`, `…MainActivity_nativeRegister` y `…MainActivity_nativeEvent`, y su manifiesto
+  incluye los intent filters de PDF (`VIEW`, `EDIT`, `SEND`, `SEND_MULTIPLE`) y el `FileProvider`.
+- **Nada de esto se ha ejecutado en un dispositivo.** No hay emulador ni hardware Android en este
+  entorno; la lista de abajo es lo que hay que probar.
 
 ## Por probar en un dispositivo
 

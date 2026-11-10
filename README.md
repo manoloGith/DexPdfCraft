@@ -8,10 +8,10 @@ barra rápida, pestañas, paneles laterales, paleta de comandos) y **todas** sus
 se reescribe la interfaz: se compila para Android la propia interfaz egui de PdfCraft
 (`pdfcraft-ui-egui`) y se le añade una capa de plataforma Android.
 
-> Estado: **fase 2**. La app ya arranca la interfaz completa de PdfCraft (compila para Android arm64 y
-> funciona en escritorio). Faltan el selector de archivos y el portapapeles de Android (fase 3): hasta
-> entonces la app abre un PDF de muestra y los diálogos de abrir y guardar se cancelan. Plan en
-> [docs/plan.md](docs/plan.md); los cambios a PdfCraft, en [docs/fork.md](docs/fork.md).
+> Estado: **fase 3**. La app arranca la interfaz completa de PdfCraft y usa el selector de archivos
+> de Android para abrir, guardar y guardar como (los cambios se escriben en el documento original),
+> además del portapapeles y «Abrir con» / «Compartir». Falta probarla en un dispositivo DeX, e
+> imprimir. Plan en [docs/plan.md](docs/plan.md); los cambios a PdfCraft, en [docs/fork.md](docs/fork.md).
 
 ## Cómo está hecho
 
