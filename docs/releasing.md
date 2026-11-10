@@ -3,7 +3,8 @@
 1. Sube `dexpdfcraft.version` y `dexpdfcraft.versionCode` en `apps/dexpdfcraft/android/gradle.properties`
    y `version` en `Cargo.toml` (`[workspace.package]`). El código de versión debe crecer siempre.
 2. Escribe las notas en `docs/release-notes/v<versión>.md`.
-3. Haz commit y sube un tag `v<versión>`:
+3. Haz commit y sube un tag `v<versión>`, o lanza a mano el workflow **Release** (Actions ▸ Release ▸
+   Run workflow), que crea el tag con la versión de `gradle.properties`:
 
 ```bash
 git tag v0.1.0 && git push origin v0.1.0

@@ -1,12 +1,14 @@
 name: Release
 
-# Push a tag like v0.1.0 to build the release APK and publish it as a GitHub release.
+# Push a tag like v0.1.0, or run this workflow by hand (it then tags the commit it runs on with
+# the version in gradle.properties), to build the release APK and publish it as a GitHub release.
 # With the repository secrets DEXPDFCRAFT_KEYSTORE_BASE64, DEXPDFCRAFT_KEYSTORE_PASSWORD,
 # DEXPDFCRAFT_KEY_ALIAS and DEXPDFCRAFT_KEY_PASSWORD the APK is signed with the release key;
 # without them it is signed with a debug key and published as a pre-release.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,13 +21,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Version from the tag
+      - name: Version (the tag's, or gradle.properties' when run by hand)
         id: version
         run: |
-          tag="${GITHUB_REF_NAME}"
+          listed="$(sed -n 's/^dexpdfcraft.version=//p' apps/dexpdfcraft/android/gradle.properties)"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then tag="${GITHUB_REF_NAME}"; else tag="v${listed}"; fi
           version="${tag#v}"
-          grep -q "^dexpdfcraft.version=${version}$" apps/dexpdfcraft/android/gradle.properties || {
-            echo "gradle.properties' dexpdfcraft.version is not ${version}"; exit 1; }
+          [ "${version}" = "${listed}" ] || { echo "gradle.properties' dexpdfcraft.version is ${listed}, not ${version}"; exit 1; }
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
@@ -86,6 +88,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           name: DexPdfCraft ${{ steps.version.outputs.version }}
           prerelease: ${{ steps.key.outputs.signed != 'true' }}
           body_path: docs/release-notes/${{ steps.version.outputs.tag }}.md
