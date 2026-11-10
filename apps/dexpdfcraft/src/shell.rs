@@ -121,6 +121,10 @@ impl eframe::App for Shell {
         // The mouse and the hardware keyboard on Android (MainActivity hands them over; nothing is
         // queued elsewhere).
         raw_input.events.extend(crate::keyboard::drain());
+        raw_input.events.extend(crate::ime::drain());
+        if let Some(safe_area) = crate::insets::safe_area(ctx.pixels_per_point()) {
+            raw_input.safe_area_insets = Some(safe_area);
+        }
         raw_input.events.extend(crate::pointer::drain(ctx.pixels_per_point()));
         self.app.raw_input_hook(ctx, raw_input);
     }

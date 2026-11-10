@@ -13,7 +13,7 @@ submódulo.
 | 3 | Puente Kotlin ↔ Rust ([phase-3.md](phase-3.md)): SAF abrir/guardar/guardar como/carpetas con escritura de vuelta, portapapeles, «Abrir con» y «Compartir hacia» la app; ratón y teclado físico por la actividad; ciclo de vida de DeX | ✅ probado en DeX · ⬜ imprimir (`PrintManager`), compartir desde la app, TTS |
 | 4 | DeX y escritorio ([phase-4.md](phase-4.md)): cursores del sistema, título de la tarea, arrastrar y soltar PDFs, detección de DeX | ✅ código · ⬜ probar en DeX |
 | 5 | Funciones del escritorio que necesitan a Android ([phase-5.md](phase-5.md)): imprimir con el servicio de impresión de Android, modelos de OCR en el APK, enlaces con `Intent` | ✅ código · ⬜ probar en DeX · compartir y voz: no existen en PdfCraft de escritorio |
-| 6 | Opcional: móvil y tablet sin DeX (misma interfaz, escala mayor, gestos) | ⬜ |
+| 6 | Móvil y tablet sin DeX ([phase-6.md](phase-6.md)): teclado en pantalla (GameTextInput → texto y pre-edición), barras del sistema, notch y teclado como zona segura | ✅ código · ⬜ probar en el móvil |
 | 7 | Rendimiento y memoria en ARM, autoguardado ante cierre en segundo plano, firma del APK, F-Droid | ⬜ |
 
 ## Riesgos conocidos

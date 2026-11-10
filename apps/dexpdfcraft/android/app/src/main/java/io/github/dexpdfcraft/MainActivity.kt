@@ -23,7 +23,9 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.WindowInsetsCompat
 import com.google.androidgamesdk.GameActivity
+import com.google.androidgamesdk.gametextinput.State
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -133,6 +135,45 @@ class MainActivity : GameActivity() {
         mouseButtons = if (gone) 0 else buttons
         nativePointer(gone, e.x, e.y, buttons, h, v, e.metaState)
         return true
+    }
+
+    // --- Phone and tablet ---------------------------------------------------------------------
+
+    /** Set while this class empties the keyboard's buffer itself. */
+    private var resettingIme = false
+
+    /**
+     * The on-screen keyboard's buffer changed (GameTextInput). winit drops these, so the library
+     * gets them (see `ime.rs`); once nothing is being composed the buffer is emptied, so the
+     * keyboard never reaches back into words already typed.
+     */
+    override fun stateChanged(newState: State, dismissed: Boolean) {
+        if (resettingIme) return
+        val text = newState.text ?: ""
+        nativeIme(text, newState.composingRegionStart, newState.composingRegionEnd, false)
+        val composing = newState.composingRegionStart in 0 until newState.composingRegionEnd
+        if (!composing && text.isNotEmpty()) {
+            resettingIme = true
+            try {
+                setTextInputState(State("", 0, 0, -1, -1))
+            } finally {
+                resettingIme = false
+            }
+            nativeIme("", -1, -1, true)
+        }
+    }
+
+    /**
+     * What the system covers (status and navigation bars, a display cutout, the keyboard), as the
+     * interface's safe area: Android 15 draws apps edge to edge.
+     */
+    override fun onApplyWindowInsets(v: android.view.View, insets: WindowInsetsCompat): WindowInsetsCompat {
+        val result = super.onApplyWindowInsets(v, insets)
+        val covered = insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime(),
+        )
+        nativeInsets(covered.left, covered.top, covered.right, covered.bottom)
+        return result
     }
 
     // --- Desktop window --------------------------------------------------------------------------
@@ -526,6 +567,12 @@ class MainActivity : GameActivity() {
 
     /** An event for the library: `picked` `{id, paths}`, `open` `{paths}` or `close` `{}`. */
     private external fun nativeEvent(op: String, json: String)
+
+    /** The on-screen keyboard's buffer (see `ime.rs`); `reset`: this class emptied it. */
+    private external fun nativeIme(text: String, start: Int, end: Int, reset: Boolean)
+
+    /** What the system covers, in pixels (see `insets.rs`). */
+    private external fun nativeInsets(left: Int, top: Int, right: Int, bottom: Int)
 
     /** One key of a hardware keyboard (see `keyboard.rs`). */
     private external fun nativeKey(keycode: Int, base: Int, text: String, pressed: Boolean, repeat: Boolean, meta: Int)

@@ -150,3 +150,41 @@ pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativeKey<'caller
         })
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
+
+/// `MainActivity.nativeIme(text, start, end, reset)`: the on-screen keyboard's buffer (see
+/// crate::ime).
+#[allow(unsafe_code)] // `no_mangle`: the JVM finds native methods by their exported name
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativeIme<'caller>(
+    mut unowned: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    text: JString<'caller>,
+    start: jni::sys::jint,
+    end: jni::sys::jint,
+    reset: jni::sys::jboolean,
+) {
+    unowned
+        .with_env(|env| -> jni::errors::Result<()> {
+            let text = if text.is_null() { String::new() } else { text.try_to_string(env)? };
+            crate::ime::push(&text, start, end, reset);
+            super::events::wake();
+            Ok(())
+        })
+        .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
+}
+
+/// `MainActivity.nativeInsets(left, top, right, bottom)`: what the system covers, in pixels.
+#[allow(unsafe_code)] // `no_mangle`: the JVM finds native methods by their exported name
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_io_github_dexpdfcraft_MainActivity_nativeInsets<'caller>(
+    _unowned: EnvUnowned<'caller>,
+    _this: JObject<'caller>,
+    left: jni::sys::jint,
+    top: jni::sys::jint,
+    right: jni::sys::jint,
+    bottom: jni::sys::jint,
+) {
+    #[allow(clippy::cast_precision_loss)] // window insets are small
+    crate::insets::set(left as f32, top as f32, right as f32, bottom as f32);
+    super::events::wake();
+}
