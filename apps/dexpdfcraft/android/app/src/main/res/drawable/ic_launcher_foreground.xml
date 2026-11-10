@@ -10,8 +10,8 @@
         android:pathData="M46,78h16M54,69v9" />
     <!-- page with a folded corner -->
     <path android:fillColor="#FFFFFFFF" android:pathData="M44,27h14l8,8v26h-22z" />
-    <path android:fillColor="#FFF6C9B9" android:pathData="M58,27v8h8z" />
-    <path android:fillColor="#FFB83A18" android:pathData="M49.5,42h11a1.5,1.5 0 0 1 0,3h-11a1.5,1.5 0 0 1 0,-3z" />
-    <path android:fillColor="#FFE8B4A3" android:pathData="M49.2,48h11.6a1.2,1.2 0 0 1 0,2.5h-11.6a1.2,1.2 0 0 1 0,-2.5z" />
-    <path android:fillColor="#FFE8B4A3" android:pathData="M49.2,53h7.6a1.2,1.2 0 0 1 0,2.5h-7.6a1.2,1.2 0 0 1 0,-2.5z" />
+    <path android:fillColor="#FFF5C2C2" android:pathData="M58,27v8h8z" />
+    <path android:fillColor="#FF8E1414" android:pathData="M49.5,42h11a1.5,1.5 0 0 1 0,3h-11a1.5,1.5 0 0 1 0,-3z" />
+    <path android:fillColor="#FFE9AFAF" android:pathData="M49.2,48h11.6a1.2,1.2 0 0 1 0,2.5h-11.6a1.2,1.2 0 0 1 0,-2.5z" />
+    <path android:fillColor="#FFE9AFAF" android:pathData="M49.2,53h7.6a1.2,1.2 0 0 1 0,2.5h-7.6a1.2,1.2 0 0 1 0,-2.5z" />
 </vector>
