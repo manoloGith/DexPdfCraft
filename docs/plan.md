@@ -29,7 +29,7 @@ submódulo.
 
 ## Capa Android compartida
 
-Desde la versión siguiente a la 0.2.0, la capa Android que no es de PdfCraft (parches de winit, entrada, ciclo de vida,
+Desde la v0.3.0, la capa Android que no es de PdfCraft (parches de winit, entrada, ciclo de vida,
 documentos SAF, portapapeles, impresión, diagnóstico; Rust y Kotlin) está en el submódulo
 `craft-android/` ([manoloGith/craft-android](https://github.com/manoloGith/craft-android)), para
 reutilizarla en otras apps de storytold. Los documentos de cada fase describen dónde estaba el

@@ -1,0 +1,1 @@
+Cambio interno: la capa Android viene ahora de la biblioteca compartida craft-android (mismas funciones).
