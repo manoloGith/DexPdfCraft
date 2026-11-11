@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "dexpdfcraft"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "arboard-android-shim",
  "craft-android",

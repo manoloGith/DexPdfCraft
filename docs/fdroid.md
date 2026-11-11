@@ -52,8 +52,8 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 0.3.0
-CurrentVersionCode: 3
+CurrentVersion: 0.3.1
+CurrentVersionCode: 4
 ```
 
 Puntos que la revisión de F-Droid mirará:

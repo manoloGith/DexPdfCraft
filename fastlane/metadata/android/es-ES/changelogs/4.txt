@@ -1,0 +1,1 @@
+Abre archivos desde DexFiles, Ctrl+C/X/V usan el portapapeles del sistema y el diagnóstico solo está en las compilaciones de depuración.

@@ -1,0 +1,1 @@
+Opens files from DexFiles, Ctrl+C/X/V use the system clipboard, diagnostics only in debug builds.
