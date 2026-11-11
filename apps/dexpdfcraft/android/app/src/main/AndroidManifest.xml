@@ -65,6 +65,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/pdf" />
             </intent-filter>
+
+            <!-- DexFiles' "Open" for the files PdfCraft opens as documents: PDFs, and images and
+                 text, which it converts to PDF (pdfcraft-create's CONVERTIBLE). FDF and XFDF are
+                 not here: they are form data imported into a PDF already open, not documents. -->
+            <intent-filter>
+                <action android:name="io.github.dexfiles.action.OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="io.github.dexfiles.extensions"
+                android:value="pdf,png,jpg,jpeg,tif,tiff,gif,bmp,jp2,j2k,jpx,pcx,txt,text" />
         </activity>
 
         <!-- RestartActivity and the clipboard's FileProvider come from craft-activity's manifest. -->
