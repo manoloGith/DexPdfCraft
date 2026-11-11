@@ -58,6 +58,14 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
 
+            <!-- DexFiles finds the Dex apps by this action and makes each the default for the
+                 extensions in the meta-data below (it then opens them with VIEW, above). -->
+            <intent-filter>
+                <action android:name="io.github.dexfiles.action.OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="io.github.dexfiles.extensions" android:value="pdf" />
+
             <!-- "Share" one or several PDFs to the app: they open in tabs. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
