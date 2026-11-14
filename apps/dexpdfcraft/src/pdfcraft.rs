@@ -36,6 +36,8 @@ fn product() -> pdfcraft_ui_egui::product::Product {
             ("DexPdfCraft — github.com/manoloGith/DexPdfCraft".to_owned(), "https://github.com/manoloGith/DexPdfCraft".to_owned()),
             ("PdfCraft — github.com/storytold/pdfcraft".to_owned(), "https://github.com/storytold/pdfcraft".to_owned()),
         ],
+        // DexPdfCraft has no Discord of its own: no Discord button in the title bar.
+        discord_button: false,
     }
 }
 

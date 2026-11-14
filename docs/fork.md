@@ -10,6 +10,8 @@ Android:
 | Shims de `rfd` y `arboard` (`android/`, `crates/ui-egui/Cargo.toml`) | `rfd` (diálogos) y `arboard` (portapapeles) no tienen backend Android. Los shims toman sus nombres: en los demás sistemas reexportan las crates reales, así que allí no cambia nada; en Android los responde un backend que instala la app (SAF y `ClipboardManager`, fase 3). |
 | Sin logotipos de ArtCraft (`crates/ui-egui/src/widgets.rs`) | Son marcas que las versiones modificadas deben quitar (`docs/brand/LICENSE-brand.txt`). |
 | Fuentes de `/system/fonts` (`platform/system_fonts.rs`) | Android guarda ahí sus fuentes y no tiene fontconfig. |
+| «Acerca de» de la app (`crates/ui-egui/src/product.rs`, `dialogs.rs`) | DexPdfCraft se presenta con su nombre y agradece a PdfCraft. |
+| Sin botón de Discord en la barra de título (`product.rs`, `chrome.rs`) | `Product.discord_button = false` lo quita (y su hueco); sin `Product` se ve como en upstream. Ayuda ▸ Discord sigue. |
 
 ## Trabajar en el fork
 
