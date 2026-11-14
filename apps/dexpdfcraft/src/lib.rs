@@ -7,6 +7,7 @@
 //! The `probe` feature starts the phase 1 diagnostics window ([`app::ProbeApp`]) instead.
 
 pub mod app;
+pub mod dark_paper;
 pub mod doc;
 pub mod pdfcraft;
 
@@ -72,13 +73,15 @@ fn create(cc: &eframe::CreationContext<'_>, launch: Launch) -> Box<dyn eframe::A
         return Box::new(app::ProbeApp::new(cc, launch.platform, pdf));
     }
     // craft-android's shell: the activity's mouse, keyboard and insets, Back as the close button,
-    // autosave when the window loses focus, and the window title for DeX's taskbar.
+    // autosave when the window loses focus, the window title for DeX's taskbar, and the pages on
+    // dark paper in the dark theme.
     let shell = craft_android::Shell::new(pdfcraft::create(cc, &launch))
         .on_focus_lost(|app| app.autosave_now())
         .title(|app| match app.window_title.strip_suffix("PdfCraft") {
             Some(rest) => format!("{rest}DexPdfCraft"),
             None => app.window_title.clone(),
-        });
+        })
+        .on_theme_change(dark_paper::on_theme_change);
     Box::new(shell)
 }
 
