@@ -218,19 +218,6 @@ y el diagnóstico. No esperes a que el usuario descubra los fallos.
 - En `onDestroy`, `flush()`: 300 ms de margen y luego esperar al executor, con un máximo de 4 s
   (más bloquearía el hilo principal).
 
-### 4.11b Diálogos de archivo que esperan la respuesta en el hilo de la interfaz
-- **Síntoma:** al abrir el selector la app se cuelga (o Android la mata por ANR).
-- **Causa:** la app espera la ruta en el hilo de la interfaz (`pick_open`, `pick_save`). En Android
-  el selector es otra actividad, y la pausa de la actividad espera a ese mismo hilo.
-- **Arreglo:** que el selector responda más tarde. Si la interfaz ya tiene un camino asíncrono (la
-  versión web: `open_async`, `Services::file_dialog` con canal en WordCraft), úsalo. Si no, añade al
-  fork un enganche genérico: GridCraft `Services::pick_save_async`; DeckCraft
-  `Services::picked_later` (el selector devuelve `None`, la ruta llega por un canal y la app vuelve a
-  ejecutar lo que lo pidió). En la app, `pickers::pick` se lanza en el hilo de la interfaz y se
-  espera en un hilo aparte (`when_picked`/`block_on` de DexGridCraft o DexDeckCraft).
-- Imprimir abriendo un PDF (`file://…pdf`, como DeckCraft): intercepta ese `OpenUrl` y manda el PDF
-  a `print::print_pdf` (DexDeckCraft, `DeckApp::ui`).
-
 ### 4.12 Programas externos y assets grandes
 - Android solo ejecuta binarios desde `nativeLibraryDir`. Inclúyelos como `lib/<abi>/libX.so` y
   pon `jniLibs.useLegacyPackaging = true` para que se extraigan al instalar.
